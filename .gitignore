@@ -1,0 +1,12 @@
+*.pyc
+.metadata
+.project
+.pydevproject
+reconstruction/calibration
+reconstruction/result
+reconstruction/stereo_calibration
+reconstruction/video2
+sliding-windows/data
+sliding-windows/result
+sliding-windows/_pycache_
+sliding-windows/video2
