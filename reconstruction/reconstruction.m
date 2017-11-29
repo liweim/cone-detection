@@ -20,7 +20,7 @@ frameRight = frame(:, width/2 +1: width, :);
 
 [frameLeftRect, frameRightRect] = rectifyStereoImages(frameLeft, frameRight, stereoParams);
 
-%imtool(stereoAnaglyph(frameLeftRect, frameRightRect));
+imtool(stereoAnaglyph(frameLeftRect, frameRightRect));
 
 coneDisparity = [163.5, 102, 58.5];
 coneRealDistance = [0.5, 0.8, 1.4];
