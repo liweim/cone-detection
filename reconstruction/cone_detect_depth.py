@@ -28,9 +28,49 @@ set_session(tf.Session(config=config))
 color = [(0, 255, 255), (255, 0, 0), (0, 165, 255)]
 class_label = ['yellow', 'blue', 'orange']
 
-def callback(x):
-    pass
+def trackbar(img, prob_map, threshold):
+    title = 'Drag the slider to get the best result'
+    cv2.namedWindow(title, cv2.WINDOW_NORMAL)
+    cv2.createTrackbar('plant_distance', title, 2, 20, callback)
+    rows, cols = prob_map.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    last = 0
+    while(1):
+        k = cv2.waitKey(1) & 0xFF
+        if k == 27:
+            break
+
+        plant_distance = cv2.getTrackbarPos('plant_distance', title)
+        plant_distance *= 5
+
+        if plant_distance == last:
+            continue
+
+        if plant_distance > 0:
+            mask = cv2.inRange(prob_map, threshold, 1)
+            mask_gray = np.copy(img)
+            mask_color = np.copy(img)
+            for r in range(rows):
+                for c in range(cols):
+                    if mask[r, c] == 0:
+                        mask_gray[r, c, :] = gray[r, c]
+
+            idx = strict_local_maximum(prob_map, plant_distance, threshold)
+
+            for i in range(len(idx[0])):
+                x = int(idx[0][i])
+                y = int(idx[1][i])
+                plant_size = 2
+                mask_gray[x-plant_size:x+plant_size, y-plant_size:y+plant_size] = [0, 0, 255]
+                mask_color[x-plant_size:x+plant_size, y-plant_size:y+plant_size] = [0, 0, 255]
+            result = cv2.hconcat((mask_gray, mask_color))
+            cv2.imshow(title, result)
+            last = plant_distance
+
+    print('plant_distance: {}'.format(plant_distance))
+    return plant_distance
+'''
 def trackbar(img, prob_map, num_class):
     cv2.namedWindow('img', cv2.WINDOW_NORMAL)
     cv2.createTrackbar('threshold','img',90,100,callback)
@@ -52,7 +92,7 @@ def trackbar(img, prob_map, num_class):
             index_map = mask > threshold
             mask = mask * index_map
             masks = np.logical_or(masks, index_map)
-            idxes = strict_local_maximum(mask, cone_distance)
+            idxes = strict_local_maximum(mask, cone_distance, threshold)
 
             for idx in range(len(idxes[0])):
                 x = int(idxes[0][idx])
@@ -65,21 +105,23 @@ def trackbar(img, prob_map, num_class):
 
     print(threshold, cone_distance)
     return threshold, cone_distance
-
+'''
 def img_padding(img_ori, patch_radius):
     img = img_ori / 255
     pad_width = ((patch_radius, patch_radius), (patch_radius, patch_radius), (0, 0))
     img_pad = np.lib.pad(img, pad_width, 'symmetric')
     return img_pad
 
-def strict_local_maximum(prob_map, cone_distance):
+def strict_local_maximum(prob_map, plant_distance, threshold):
     prob_gau = np.zeros(prob_map.shape)
-    sn.gaussian_filter(prob_map, 2, output=prob_gau, mode='mirror')
+    sigma = plant_distance/10 + 1
+    sn.gaussian_filter(prob_map, sigma, output=prob_gau, mode='mirror')
 
     prob_fil = np.zeros(prob_map.shape)
-    sn.rank_filter(prob_gau, -2, output=prob_fil, footprint=np.ones([cone_distance, cone_distance]))
+    sn.rank_filter(prob_gau, -2, output=prob_fil, footprint=np.ones([plant_distance, plant_distance]))
 
-    idx = np.where(prob_gau > prob_fil)
+    temp = np.logical_and(prob_gau > prob_fil, prob_map > threshold) * 1.
+    idx = np.where(temp > 0)
     return idx
 
 def cone_detect(img_path, model_path, cone_distance, threshold):
@@ -130,7 +172,7 @@ def cone_detect(img_path, model_path, cone_distance, threshold):
         mask = prob_map[:, :, i_class]
         index_map = mask > threshold
         mask = mask * index_map
-        idxes = strict_local_maximum(mask, cone_distance)
+        idxes = strict_local_maximum(mask, cone_distance, threshold)
 
         for r in range(rows):
             for c in range(cols):
@@ -226,7 +268,7 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
                 mask = prob_map[:, :, i_class]
                 index_map = mask > threshold
                 mask = mask * index_map
-                idxes = strict_local_maximum(mask, detect_size)
+                idxes = strict_local_maximum(mask, detect_size, threshold)
 
                 for idx in range(len(idxes[0])):
                     x = int(idxes[0][idx]) + cx - detect_radius
@@ -288,7 +330,7 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
     patch_size = 25
     patch_radius = int((patch_size-1)/2)
     channel = 3
-    num_class = 2
+    num_class = 1
     classes = range(1, num_class+1)
     detect_size = 512
     input_detect_size = detect_size + 2 * patch_radius
@@ -322,7 +364,7 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
         mask = prob_map[:, :, i_class]
         index_map = mask > threshold
         mask = mask * index_map
-        idxes = strict_local_maximum(mask, cone_distance)
+        idxes = strict_local_maximum(mask, cone_distance, threshold)
 
         for idx in range(len(idxes[0])):
             x = int(idxes[0][idx])
