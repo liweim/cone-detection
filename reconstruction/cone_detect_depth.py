@@ -17,6 +17,7 @@ import argparse
 import cv2
 import pandas as pd
 import random
+from reconstruction import reconstruction
 
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
@@ -65,7 +66,7 @@ def trackbar(img, prob_map, num_class):
     print(threshold, cone_distance)
     return threshold, cone_distance
 
-def load_image(img_ori, patch_radius):
+def img_padding(img_ori, patch_radius):
     img = img_ori / 255
     pad_width = ((patch_radius, patch_radius), (patch_radius, patch_radius), (0, 0))
     img_pad = np.lib.pad(img, pad_width, 'symmetric')
@@ -100,7 +101,7 @@ def cone_detect(img_path, model_path, cone_distance, threshold):
     input_detect_size = detect_size + 2 * patch_radius
 
     img = cv2.imread(img_path)
-    img_pad = load_image(img, patch_radius)
+    img_pad = img_padding(img, patch_radius)
     cv2.imshow('img', img)
     rows, cols, d = img.shape
     rows_pad, cols_pad, d = img_pad.shape
@@ -201,7 +202,7 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
             roi = img[xl:xr, yl:yr, :]
             rows, cols, n = roi.shape
 
-            img_pad = load_image(roi, patch_radius)
+            img_pad = img_padding(roi, patch_radius)
             rows_pad, cols_pad, d = img_pad.shape
             prob_map = np.zeros([rows, cols, num_class])
 
@@ -272,6 +273,84 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
     average_time = whole_time/len(csv_paths)
     print(average_time)
 
+def cone_detect_depth(img_path, model_path, cone_distance, threshold):
+    imgL, imgR, disp, factor = reconstruction(img_path)
+    img = imgL
+    basename = os.path.split(img_path)[1]
+
+    json_file = open(model_path+'.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    model = model_from_json(loaded_model_json)
+    model.load_weights(model_path+'.h5')
+    print("Loaded model from disk")
+
+    patch_size = 25
+    patch_radius = int((patch_size-1)/2)
+    channel = 3
+    num_class = 2
+    classes = range(1, num_class+1)
+    detect_size = 512
+    input_detect_size = detect_size + 2 * patch_radius
+
+    img_pad = img_padding(img, patch_radius)
+    cv2.imshow('img', img)
+    rows, cols, d = img.shape
+    rows_pad, cols_pad, d = img_pad.shape
+    prob_map = np.zeros([rows, cols, num_class])
+    start = time.clock()
+    if np.min(img_pad)<1:
+        for r in range(0, rows_pad, detect_size):
+            for c in range(0, cols_pad, detect_size):
+                input_image = img_pad[r:r+input_detect_size, c:c+input_detect_size, :]
+                if np.min(input_image)<1:
+                    input_image = np.expand_dims(input_image, axis = 0)
+                    prob = model.predict(input_image)
+                    prob = np.squeeze(prob)
+                    prob_map[r:r+detect_size, c:c+detect_size, :] = prob[:, :, classes]
+    print(time.clock() - start)
+
+    #threshold, cone_distance = trackbar(img, prob_map, num_class)
+
+    temp_img = np.zeros(img.shape)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    for i in range(3):
+        temp_img[:, :, i] = gray
+
+    cones = []
+    for i_class in range(num_class):
+        mask = prob_map[:, :, i_class]
+        index_map = mask > threshold
+        mask = mask * index_map
+        idxes = strict_local_maximum(mask, cone_distance)
+
+        for idx in range(len(idxes[0])):
+            x = int(idxes[0][idx])
+            y = int(idxes[1][idx])
+            depth = factor / disparity[x, y]
+            cones.append([x, y, i_class, depth])
+            print(x, y, i_class, depth)
+
+        '''
+        for r in range(rows):
+            for c in range(cols):
+                if index_map[r, c]:
+                    temp_img[r, c, :] = img[r, c, :]
+
+        for idx in range(len(idxes[0])):
+            x = int(idxes[0][idx])
+            y = int(idxes[1][idx])
+            cones.append([x, y, i_class])
+            print(x, y, i_class)
+            temp_img[x-2:x+2, y-2:y+2] = color[i_class]
+
+    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+    cv2.imshow('img', temp_img)
+    save_path = join('video2', basename)
+    cv2.imwrite(save_path, temp_img)
+    '''
+
 if __name__ == '__main__':
     #cone_detect(img_path = 'video2/right/20.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
-    cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
+    #cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
+    cone_detect(img_path = 'ZED/stereo/2.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)

@@ -1,0 +1,23 @@
+python3 slice_img.py --img_path tmp/1054/1054.tiff --img_size 2000
+
+python3 rename_img.py --img_path data
+
+python3 merge_txt.py --img_path tmp/1054/1054.tiff
+
+python3 merge_data.py --from_data 19 --to_data 11
+
+python select_region.py --cone_id red --img_path 2.png
+
+python3 annotation.py --img_path tmp/999/30.png --data data/14
+
+python3 select_roi.py --plant_id 949 --img_path 10.png
+
+python3 train_model_efficient.py --plant_id 16
+
+python train_model_segmantic.py  --cone_id red --train_num 100000
+
+python3 plant_detect_efficient.py --img_path tmp/915/915.tif --model_id 2 --plant_distance 10 --show_img 0 --threshold 0.9 --resize_rate 1 --test_mode 0
+
+python3 test_plant_detect.py --img_path tmp/999/999.tif --model_id segmantic --plant_distance 10 --threshold 0.9 --resize_rate 1 --test_mode 0 --test_size 1000
+
+python3 csv2shp.py --i tmp/915/915.txt --o tmp/915/915.geojson --t tmp/915/915.tif

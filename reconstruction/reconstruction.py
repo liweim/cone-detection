@@ -52,8 +52,21 @@ def trackbar(left, right):
 
         numDisparities = numDisparities * 16
         blockSize = 5 + blockSize * 2
-        stereo = cv2.StereoSGBM_create(numDisparities = numDisparities, blockSize = blockSize, uniquenessRatio = uniquenessRatio)
+        #stereo = cv2.StereoSGBM_create(numDisparities = numDisparities, blockSize = blockSize, uniquenessRatio = uniquenessRatio)
         #stereo = cv2.StereoBM_create(numDisparities=numDisparities, blockSize=blockSize)
+
+        window_size = 3
+        stereo = cv2.StereoSGBM_create(minDisparity = min_disp,
+            numDisparities = numDisparities,
+            blockSize = blockSize,
+            P1 = 8*3*window_size**2,
+            P2 = 32*3*window_size**2,
+            disp12MaxDiff = 1,
+            uniquenessRatio = 10,
+            speckleWindowSize = 100,
+            speckleRange = 32
+        )
+
         disparity = stereo.compute(left, right)
         depth_map = F * d / disparity
         print(numDisparities, blockSize, uniquenessRatio)
@@ -65,6 +78,7 @@ def trackbar(left, right):
     return numDisparities, blockSize, uniquenessRatio
 
 def rectification(img_path):
+    basename = os.path.split(img_path)[1]
     img = cv2.imread(img_path)
     row, col = img.shape[:2]
     col = int(col/2)
@@ -101,6 +115,7 @@ def rectification(img_path):
     left_rect = cv2.remap(left, map1x, map1y, cv2.INTER_LINEAR)
     right_rect = cv2.remap(right, map2x, map2y, cv2.INTER_LINEAR)
 
+    cv2.imwrite(join('ZED', 'rectify', basename), left_rect)
     return left_rect, right_rect
 
 '''
@@ -156,6 +171,7 @@ def write_ply(fn, verts, colors):
 
 def reconstruction(img_path):
     imgL, imgR = rectification(img_path)
+
     imgL = cv2.pyrDown(imgL)
     imgR = cv2.pyrDown(imgR)
     '''
@@ -186,7 +202,8 @@ def reconstruction(img_path):
     plt.show()
     '''
 
-    return disp
+    factor = F * d
+    return imgL, imgR, disp, factor
 
     '''
     print('generating 3d point cloud...',)
@@ -225,5 +242,5 @@ def reconstruction(img_path):
     '''
 if __name__=='__main__':
     start = time.clock()
-    reconstruction('ZED/stereo/2.png')
+    rectification('ZED/stereo/2.png')
     print(time.clock() - start)
