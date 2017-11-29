@@ -202,7 +202,7 @@ def reconstruction(img_path):
     plt.show()
     '''
 
-    factor = F * d
+    factor = F * d / 2
     return imgL, imgR, disp, factor
 
     '''

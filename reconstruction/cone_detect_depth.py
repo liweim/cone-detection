@@ -28,6 +28,9 @@ set_session(tf.Session(config=config))
 color = [(0, 255, 255), (255, 0, 0), (0, 165, 255)]
 class_label = ['yellow', 'blue', 'orange']
 
+def callback(x):
+    pass
+'''
 def trackbar(img, prob_map, threshold):
     title = 'Drag the slider to get the best result'
     cv2.namedWindow(title, cv2.WINDOW_NORMAL)
@@ -71,41 +74,44 @@ def trackbar(img, prob_map, threshold):
     print('plant_distance: {}'.format(plant_distance))
     return plant_distance
 '''
-def trackbar(img, prob_map, num_class):
+def trackbar(img, prob_map, num_class, threshold):
     cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-    cv2.createTrackbar('threshold','img',90,100,callback)
-    cv2.createTrackbar('cone_distance','img',20,100,callback)
+    cv2.createTrackbar('cone_distance','img',2,20,callback)
 
+    last = 0
     while(1):
         k = cv2.waitKey(1) & 0xFF
         if k == 27:
             break
 
-        threshold = cv2.getTrackbarPos('threshold','img')
         cone_distance = cv2.getTrackbarPos('cone_distance','img')
+        cone_distance *= 5
 
-        threshold /= 100
-        temp_img = np.copy(img)
-        masks = np.zeros(img.shape[0:2])
-        for i_class in range(num_class):
-            mask = prob_map[:, :, i_class]
-            index_map = mask > threshold
-            mask = mask * index_map
-            masks = np.logical_or(masks, index_map)
-            idxes = strict_local_maximum(mask, cone_distance, threshold)
+        if cone_distance == last:
+            continue
 
-            for idx in range(len(idxes[0])):
-                x = int(idxes[0][idx])
-                y = int(idxes[1][idx])
-                temp_img[x-2:x+2, y-2:y+2] = color[i_class]
-        for i in range(3):
-            temp_img[:, :, i] = temp_img[:, :, i] * masks
-        cv2.imshow('img',temp_img)
+        if cone_distance > 0:
+            temp_img = np.copy(img)
+            masks = np.zeros(img.shape[0:2])
+            for i_class in range(num_class):
+                mask = prob_map[:, :, i_class]
+                index_map = mask > threshold
+                mask = mask * index_map
+                masks = np.logical_or(masks, index_map)
+                idxes = strict_local_maximum(mask, cone_distance, threshold)
+
+                for idx in range(len(idxes[0])):
+                    x = int(idxes[0][idx])
+                    y = int(idxes[1][idx])
+                    temp_img[x-2:x+2, y-2:y+2] = color[i_class]
+            for i in range(3):
+                temp_img[:, :, i] = temp_img[:, :, i] * masks
+            cv2.imshow('img',temp_img)
     cv2.destroyAllWindows()
 
-    print(threshold, cone_distance)
-    return threshold, cone_distance
-'''
+    print(cone_distance)
+    return cone_distance
+
 def img_padding(img_ori, patch_radius):
     img = img_ori / 255
     pad_width = ((patch_radius, patch_radius), (patch_radius, patch_radius), (0, 0))
@@ -115,7 +121,7 @@ def img_padding(img_ori, patch_radius):
 def strict_local_maximum(prob_map, plant_distance, threshold):
     prob_gau = np.zeros(prob_map.shape)
     sigma = plant_distance/10 + 1
-    sn.gaussian_filter(prob_map, sigma, output=prob_gau, mode='mirror')
+    sn.gaussian_filter(prob_map, 3, output=prob_gau, mode='mirror')
 
     prob_fil = np.zeros(prob_map.shape)
     sn.rank_filter(prob_gau, -2, output=prob_fil, footprint=np.ones([plant_distance, plant_distance]))
@@ -123,74 +129,6 @@ def strict_local_maximum(prob_map, plant_distance, threshold):
     temp = np.logical_and(prob_gau > prob_fil, prob_map > threshold) * 1.
     idx = np.where(temp > 0)
     return idx
-
-def cone_detect(img_path, model_path, cone_distance, threshold):
-    basename = os.path.split(img_path)[1]
-
-    json_file = open(model_path+'.json', 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    model = model_from_json(loaded_model_json)
-    model.load_weights(model_path+'.h5')
-    print("Loaded model from disk")
-
-    patch_size = 25
-    patch_radius = int((patch_size-1)/2)
-    channel = 3
-    num_class = 2
-    classes = range(1, num_class+1)
-    detect_size = 512
-    input_detect_size = detect_size + 2 * patch_radius
-
-    img = cv2.imread(img_path)
-    img_pad = img_padding(img, patch_radius)
-    cv2.imshow('img', img)
-    rows, cols, d = img.shape
-    rows_pad, cols_pad, d = img_pad.shape
-    prob_map = np.zeros([rows, cols, num_class])
-    start = time.clock()
-    if np.min(img_pad)<1:
-        for r in range(0, rows_pad, detect_size):
-            for c in range(0, cols_pad, detect_size):
-                input_image = img_pad[r:r+input_detect_size, c:c+input_detect_size, :]
-                if np.min(input_image)<1:
-                    input_image = np.expand_dims(input_image, axis = 0)
-                    prob = model.predict(input_image)
-                    prob = np.squeeze(prob)
-                    prob_map[r:r+detect_size, c:c+detect_size, :] = prob[:, :, classes]
-    print(time.clock() - start)
-
-    #threshold, cone_distance = trackbar(img, prob_map, num_class)
-
-    temp_img = np.zeros(img.shape)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    for i in range(3):
-        temp_img[:, :, i] = gray
-
-    cones = []
-    for i_class in range(num_class):
-        mask = prob_map[:, :, i_class]
-        index_map = mask > threshold
-        mask = mask * index_map
-        idxes = strict_local_maximum(mask, cone_distance, threshold)
-
-        for r in range(rows):
-            for c in range(cols):
-                if index_map[r, c]:
-                    temp_img[r, c, :] = img[r, c, :]
-
-        for idx in range(len(idxes[0])):
-            x = int(idxes[0][idx])
-            y = int(idxes[1][idx])
-            cones.append([x, y, i_class])
-            print(x, y, i_class)
-            temp_img[x-2:x+2, y-2:y+2] = color[i_class]
-
-
-    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-    cv2.imshow('img', temp_img)
-    save_path = join('video2', basename)
-    cv2.imwrite(save_path, temp_img)
 
 def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
     dirname = os.path.split(csv_folder_path)[0]
@@ -340,7 +278,7 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
     rows, cols, d = img.shape
     rows_pad, cols_pad, d = img_pad.shape
     prob_map = np.zeros([rows, cols, num_class])
-    start = time.clock()
+
     if np.min(img_pad)<1:
         for r in range(0, rows_pad, detect_size):
             for c in range(0, cols_pad, detect_size):
@@ -350,9 +288,8 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
                     prob = model.predict(input_image)
                     prob = np.squeeze(prob)
                     prob_map[r:r+detect_size, c:c+detect_size, :] = prob[:, :, classes]
-    print(time.clock() - start)
 
-    #threshold, cone_distance = trackbar(img, prob_map, num_class)
+    #cone_distance = trackbar(img, prob_map, num_class, threshold)
 
     temp_img = np.zeros(img.shape)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -366,14 +303,6 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
         mask = mask * index_map
         idxes = strict_local_maximum(mask, cone_distance, threshold)
 
-        for idx in range(len(idxes[0])):
-            x = int(idxes[0][idx])
-            y = int(idxes[1][idx])
-            depth = factor / disparity[x, y]
-            cones.append([x, y, i_class, depth])
-            print(x, y, i_class, depth)
-
-        '''
         for r in range(rows):
             for c in range(cols):
                 if index_map[r, c]:
@@ -382,17 +311,19 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
         for idx in range(len(idxes[0])):
             x = int(idxes[0][idx])
             y = int(idxes[1][idx])
-            cones.append([x, y, i_class])
-            print(x, y, i_class)
+            depth = factor / disp[x, y]
+            cones.append([x, y, class_label[i_class], depth])
+            print(x, y, class_label[i_class], depth)
             temp_img[x-2:x+2, y-2:y+2] = color[i_class]
 
-    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-    cv2.imshow('img', temp_img)
-    save_path = join('video2', basename)
-    cv2.imwrite(save_path, temp_img)
-    '''
+    plt.imshow(temp_img)
+    plt.show()
+    #save_path = join('video2', basename)
+    #cv2.imwrite(save_path, temp_img)
 
 if __name__ == '__main__':
     #cone_detect(img_path = 'video2/right/20.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
     #cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
-    cone_detect(img_path = 'ZED/stereo/2.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
+    start = time.clock()
+    cone_detect_depth(img_path = 'ZED/stereo/2.png', model_path = 'models/model_cone', cone_distance = 100, threshold = 0.1)
+    print(time.clock() - start)
