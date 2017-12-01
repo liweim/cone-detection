@@ -115,7 +115,8 @@ def rectification(img_path):
     left_rect = cv2.remap(left, map1x, map1y, cv2.INTER_LINEAR)
     right_rect = cv2.remap(right, map2x, map2y, cv2.INTER_LINEAR)
 
-    cv2.imwrite(join('ZED', 'rectify', basename), left_rect)
+    cv2.imwrite(join('ZED', 'rectify', 'left', basename), left_rect)
+    cv2.imwrite(join('ZED', 'rectify', 'right', basename), right_rect)
     return left_rect, right_rect
 
 '''
