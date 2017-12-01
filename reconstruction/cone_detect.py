@@ -146,7 +146,8 @@ def cone_detect(img_path, model_path, cone_distance, threshold):
 
     cv2.namedWindow('img', cv2.WINDOW_NORMAL)
     cv2.imshow('img', temp_img)
-    save_path = join('video2', basename)
+    cv2.waitKey(0)
+    save_path = join('result', basename)
     cv2.imwrite(save_path, temp_img)
 
 def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
@@ -273,5 +274,11 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
     print(average_time)
 
 if __name__ == '__main__':
-    #cone_detect(img_path = 'video2/right/20.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
-    cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--img_path", type = str)
+    parser.add_argument("--model_path", type = str)
+    parser.add_argument("--cone_distance", type = int)
+    parser.add_argument("--threshold", type = float)
+    args = parser.parse_args()
+
+    cone_detect(img_path = args.img_path, model_path = args.model_path, cone_distance = args.cone_distance, threshold = args.threshold)

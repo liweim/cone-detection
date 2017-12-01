@@ -91,7 +91,7 @@ def train_model(save_path, labels, transfer_learning = 1):
         #model = model_from_json(save_path+'.json')
         model.load_weights(save_path+'.h5')
     tb = TensorBoard(log_dir='tmp/logs/final_model')
-    estop = EarlyStopping(monitor='val_loss', patience=10)
+    estop = EarlyStopping(monitor='val_loss', patience=20)
     checkpoint = ModelCheckpoint(save_path+'.h5', monitor="val_loss",save_best_only=True, verbose=1)
     #model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=100, batch_size=256, callbacks=[tb,estop,checkpoint])
     model.fit_generator(datagen.flow(x_train, y_train, batch_size = batch_size), validation_data = (x_test, y_test), steps_per_epoch = len(x_train) / batch_size, epochs = 100, callbacks = [tb, estop, checkpoint])

@@ -253,26 +253,7 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
     average_time = whole_time/len(csv_paths)
     print(average_time)
 
-def cone_detect_depth(img_path, model_path, cone_distance, threshold):
-    imgL, imgR, disp, factor = reconstruction(img_path)
-    img = imgL
-    basename = os.path.split(img_path)[1]
-
-    json_file = open(model_path+'.json', 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    model = model_from_json(loaded_model_json)
-    model.load_weights(model_path+'.h5')
-    print("Loaded model from disk")
-
-    patch_size = 25
-    patch_radius = int((patch_size-1)/2)
-    channel = 3
-    num_class = 1
-    classes = range(1, num_class+1)
-    detect_size = 512
-    input_detect_size = detect_size + 2 * patch_radius
-
+def detection(img, model, cone_distance, threshold, patch_radius, num_class, classes, detect_size, input_detect_size):
     img_pad = img_padding(img, patch_radius)
     cv2.imshow('img', img)
     rows, cols, d = img.shape
@@ -289,7 +270,7 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
                     prob = np.squeeze(prob)
                     prob_map[r:r+detect_size, c:c+detect_size, :] = prob[:, :, classes]
 
-    cone_distance = trackbar(img, prob_map, num_class, threshold)
+    #cone_distance = trackbar(img, prob_map, num_class, threshold)
 
     temp_img = np.zeros(img.shape)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -311,19 +292,60 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
         for idx in range(len(idxes[0])):
             x = int(idxes[0][idx])
             y = int(idxes[1][idx])
-            depth = factor / disp[x, y]
-            cones.append([x, y, class_label[i_class], depth])
-            print(x, y, class_label[i_class], depth)
+            #depth = factor / disp[x, y]
+            #cones.append([x, y, class_label[i_class], depth])
+            #print(x, y, class_label[i_class], depth)
+            cones.append([x, y, class_label[i_class]])
+            print(x, y, class_label[i_class])
             temp_img[x-2:x+2, y-2:y+2] = color[i_class]
+    return temp_img, cones
 
-    plt.imshow(temp_img)
-    plt.show()
-    #save_path = join('video2', basename)
-    #cv2.imwrite(save_path, temp_img)
+def cone_detect_depth(img_path, model_path, cone_distance, threshold):
+    imgL, imgR, disp, factor = reconstruction(img_path)
+    basename = os.path.split(img_path)[1]
+
+    json_file = open(model_path+'.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    model = model_from_json(loaded_model_json)
+    model.load_weights(model_path+'.h5')
+    print("Loaded model from disk")
+
+    patch_size = 25
+    patch_radius = int((patch_size-1)/2)
+    channel = 3
+    num_class = 1
+    classes = range(1, num_class+1)
+    detect_size = 512
+    input_detect_size = detect_size + 2 * patch_radius
+
+    left_result, left_cones = detection(imgL, model, cone_distance, threshold,
+        patch_radius, num_class, classes, detect_size, input_detect_size)
+    right_result, right_cones = detection(imgR, model, cone_distance, threshold,
+        patch_radius, num_class, classes, detect_size, input_detect_size)
+
+    disparity = []
+    if len(left_cones) == len(right_cones):
+        for left_cone, right_cone in zip(left_cones, right_cones):
+            pt1 = np.array(left_cone[:2])
+            pt2 = np.array(right_cone[:2])
+            disparity.append(np.linalg.norm(pt1 - pt2))
+    depth = factor/np.array(disparity)
+    print(depth)
+    '''
+    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+    cv2.imshow('img', temp_img)
+    cv2.waitKey(0)
+    save_path = join('result', basename)
+    cv2.imwrite(save_path, temp_img)
+    '''
 
 if __name__ == '__main__':
-    #cone_detect(img_path = 'video2/right/20.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
-    #cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
-    start = time.clock()
-    cone_detect_depth(img_path = 'ZED/stereo/2.png', model_path = 'models/model_cone', cone_distance = 100, threshold = 0.1)
-    print(time.clock() - start)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--img_path", type = str)
+    parser.add_argument("--model_path", type = str)
+    parser.add_argument("--cone_distance", type = int)
+    parser.add_argument("--threshold", type = float)
+    args = parser.parse_args()
+
+    cone_detect_depth(img_path = args.img_path, model_path = args.model_path, cone_distance = args.cone_distance, threshold = args.threshold)

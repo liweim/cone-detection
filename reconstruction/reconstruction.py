@@ -33,7 +33,8 @@ def write_ply(fn, verts, colors):
 
 def reconstruction(img_path):
     imgL, imgR = rectify(img_path)
-
+    #plt.imshow((imgL+imgR)[:,:,::-1])
+    #plt.show()
     #imgL = cv2.pyrDown(imgL)
     #imgR = cv2.pyrDown(imgR)
 
@@ -55,12 +56,14 @@ def reconstruction(img_path):
     print('computing disparity...')
     disp = stereo.compute(imgL, imgR).astype(np.float32) / 16.0
 
-    f, ax = plt.subplots(1, 3)
-    ax[0].imshow(imgL[:,:,::-1])
-    ax[1].imshow(imgR[:,:,::-1])
-    ax[2].imshow(disp, cmap='gray')
+    '''
+    f, ax = plt.subplots(2, 2)
+    ax[0][0].imshow(imgL[:,:,::-1])
+    ax[0][1].imshow(imgR[:,:,::-1])
+    ax[1][0].imshow((imgL+imgR)[:,:,::-1])
+    ax[1][1].imshow(disp, cmap='gray')
     plt.show()
-
+    '''
 
     factor = F * d / 4
     return imgL, imgR, disp, factor
