@@ -289,7 +289,7 @@ def cone_detect_depth(img_path, model_path, cone_distance, threshold):
                     prob = np.squeeze(prob)
                     prob_map[r:r+detect_size, c:c+detect_size, :] = prob[:, :, classes]
 
-    #cone_distance = trackbar(img, prob_map, num_class, threshold)
+    cone_distance = trackbar(img, prob_map, num_class, threshold)
 
     temp_img = np.zeros(img.shape)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

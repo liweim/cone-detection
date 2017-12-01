@@ -34,6 +34,8 @@ def load_data(train_num):
     labels = []
     imgs = []
     masks = []
+    back_areas = []
+    front_areas = []
     radius = 12
 
     annotation_folder_path = join('annotations')
@@ -47,7 +49,12 @@ def load_data(train_num):
             imgs.append(img)
             masks.append(mask)
             labels.append(int(cone_id))
-
+            front_area = np.sum(mask>0)
+            back_area = np.size(mask) - front_area
+            front_areas.append(front_area)
+            back_areas.append(back_area)
+    front_areas = front_areas/sum(front_areas)
+    back_areas = back_areas/sum(front_areas)
     num = np.zeros(num_class)
     random_range = range(len(imgs))
     while max(num < train_num):
