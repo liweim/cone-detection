@@ -8,7 +8,6 @@ def callback(x):
     pass
 
 def select_region(cone_id, img_path):
-    img_path = join('ZED', 'rectify', img_path)
     img = cv2.imread(img_path)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     row, col = img.shape[:2]

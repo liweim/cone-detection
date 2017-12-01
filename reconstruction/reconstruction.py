@@ -34,9 +34,8 @@ def write_ply(fn, verts, colors):
 def reconstruction(img_path):
     imgL, imgR = rectify(img_path)
 
-    imgL = cv2.pyrDown(imgL)
-    imgR = cv2.pyrDown(imgR)
-
+    #imgL = cv2.pyrDown(imgL)
+    #imgR = cv2.pyrDown(imgR)
 
     # disparity range is tuned for 'aloe' image pair
     window_size = 3
@@ -63,7 +62,7 @@ def reconstruction(img_path):
     plt.show()
 
 
-    factor = F * d / 2
+    factor = F * d / 4
     return imgL, imgR, disp, factor
 
     '''

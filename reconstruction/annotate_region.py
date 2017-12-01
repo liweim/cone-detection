@@ -9,7 +9,6 @@ def callback(x):
     pass
 
 def annotate_region(cone_id, img_path):
-    img_path = join('ZED', 'rectify', img_path)
     img = cv2.imread(img_path)
     row, col = img.shape[:2]
     mask = np.copy(img)

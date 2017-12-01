@@ -109,6 +109,9 @@ def rectify(img_path):
     left_rect = cv2.remap(left, map1x, map1y, cv2.INTER_LINEAR)
     right_rect = cv2.remap(right, map2x, map2y, cv2.INTER_LINEAR)
 
+    left_rect = cv2.resize(left_rect, (320, 180))
+    left_rect = cv2.resize(left_rect, (320, 180))
+
     left_save_path = join('ZED', num, 'rectify', 'left', basename)
     right_save_path = join('ZED', num, 'rectify', 'right', basename)
     cv2.imwrite(left_save_path, left_rect)
