@@ -14,8 +14,8 @@ R = np.array([[0.9998, -0.0016, -0.0215], [0.0016, 1, -0.0021], [0.0215, 0.0020,
 R = np.transpose(R)
 T = np.array([-119.1632, 0.2062, 0.0252])
 
-F = mtx_left[0, 0]
-d = np.linalg.norm(T)
+F = 700
+d = 120
 
 def callback(x):
     pass

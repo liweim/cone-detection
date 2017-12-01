@@ -28,4 +28,6 @@ python3 train_model_segmantic.py --train_num 10000
 
 python3 cone_detect_depth.py
 
-python rectify_all.py --img_folder_path ZED/1/stereo
+python rectify_all.py --img_folder_path ZED/2/stereo
+
+python reconstruction.py --img_path ZED/1/stereo/2.png
