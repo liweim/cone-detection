@@ -140,7 +140,6 @@ def cone_detect(img_path, model_path, cone_distance, threshold):
             x = int(idxes[0][idx])
             y = int(idxes[1][idx])
             cones.append([x, y, i_class])
-            print(x, y, i_class)
             temp_img[x-2:x+2, y-2:y+2] = color[i_class]
 
 
@@ -262,7 +261,7 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
                 cv2.putText(temp_img, str(cone_id), (y, x), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_show, 2)
 
         save_path = join('result/2_5_right', filename+'.png')
-        cv2.imwrite(save_path, temp_img)
+        #cv2.imwrite(save_path, temp_img)
         '''
         cv2.namedWindow('img', cv2.WINDOW_NORMAL)
         cv2.imshow('img', temp_img)
@@ -273,5 +272,5 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
     print(average_time)
 
 if __name__ == '__main__':
-    #cone_detect(img_path = 'video2/right/20.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
-    cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
+    cone_detect(img_path = 'video2/right/20.png', model_path = 'models/model_cone', cone_distance = 20, threshold = 0.9)
+    #cone_detect_roi(csv_folder_path = 'video2/bbox', model_path = 'models/model_cone', bias_rate = 0.5, threshold = 0.5)
