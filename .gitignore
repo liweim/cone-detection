@@ -10,3 +10,5 @@ old-sliding-windows/data
 old-sliding-windows/result
 old-sliding-windows/_pycache_
 old-sliding-windows/video2
+data_cifar10
+data_mnist

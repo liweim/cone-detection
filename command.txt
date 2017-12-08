@@ -36,4 +36,6 @@ python annotation.py --img_path ZED/1/rectify/left/2.png --data data/yellow
 
 python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/model_cone --cone_distance 50 --threshold 0.9
 
-g++ test.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread
+g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread
+
+./a.out --data_path data_cifar10

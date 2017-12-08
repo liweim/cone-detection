@@ -108,11 +108,11 @@ def network():
     model = Sequential()
     model.add(Conv2D(32, (7, 7), input_shape = (None, None, CHANNEL), activation='relu'))
     model.add(Conv2D(32, (7, 7),  activation = 'relu'))
-    model.add(Dropout(0.25))
+    #model.add(Dropout(0.25))
 
     model.add(Conv2D(64, (5, 5), activation = 'relu'))
     model.add(Conv2D(64, (5, 5), activation = 'relu'))
-    model.add(Dropout(0.25))
+    #model.add(Dropout(0.25))
 
     model.add(Conv2D(128, (3, 3), activation = 'relu'))
     model.add(Conv2D(num_class, (3, 3), activation = 'softmax'))
