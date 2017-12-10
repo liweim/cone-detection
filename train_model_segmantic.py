@@ -38,6 +38,7 @@ def load_data(train_num):
     front_areas = [0]
     radius = 12
 
+    '''
     annotation_folder_path = join('annotations')
     image_folder_path = join('images')
     cone_ids = os.listdir(annotation_folder_path)
@@ -93,6 +94,78 @@ def load_data(train_num):
                 images.append(image)
                 classes.append(label)
                 num[label] += 1
+    '''
+
+    annotation_folder_path = 'annotations'
+    image_folder_path = 'images'
+    cone_ids = os.listdir(annotation_folder_path)
+    num = np.zeros(len(cone_ids)+1)
+    for cone_id in cone_ids:
+        annotation_paths = os.listdir(annotation_folder_path, cone_id)
+        for img_path in annotation_paths:
+            img = cv2.imread(join(image_folder_path, cone_id, img_path))
+            mask = cv2.imread(join(annotation_folder_path, cone_id, img_path), 0)
+            imgs.append(img)
+            masks.append(mask)
+            labels.append(int(cone_id))
+            flags.append(np.zeros(mask.shape))
+            front_area = np.sum(mask==255)
+            back_area = np.sum(mask==100)
+            front_areas.append(front_area)
+            back_areas.append(back_area)
+
+    sum_front_area = np.sum(front_areas)
+    sum_back_area = np.sum(back_areas)
+    print('Train num: {}'.format(train_num))
+    print('Frontground area: {}'.format(sum_front_area))
+    print('Background area: {}'.format(sum_back_area))
+    if train_num > sum_front_area:
+        print('Train number should be less than {}'. format(sum_front_area))
+        return
+    if train_num > sum_back_area:
+        print('Train number should be less than {}'. format(sum_back_area))
+        return
+
+    front_areas /= sum_front_area
+    back_areas /= sum_back_area
+    for i in range(1, len(back_areas)):
+        mask = masks[i-1]
+        front_areas[i] = front_areas[i] + front_areas[i-1]
+        back_areas[i] = back_areas[i] + back_areas[i-1]
+        if mask.max() == 100:
+            back_areas[i] *= 1.5
+    back_areas /= back_areas[-1]
+
+    num_back = 0
+    num_front = 0
+    for count in range(train_num):
+        rd = random()
+        for i in range(len(imgs)):
+            img = imgs[i]
+            mask = masks[i]
+            label = labels[i]
+            rs, cs = mask.shape
+            r = choice(range(radius, rs-radius))
+            c = choice(range(radius, cs-radius))
+            if rd < back_areas[i+1] and rd > back_areas[i]:
+                while not mask[r, c] == 100:
+                    r = choice(range(radius, rs-radius))
+                    c = choice(range(radius, cs-radius))
+                image = img[r-radius:r+radius+1, c-radius:c+radius+1, :]
+                image = cv2.resize(image, (25, 25))
+                images.append(image)
+                classes.append(0)
+                num[0] += 1
+            if rd < front_areas[i+1] and rd > front_areas[i]:
+                while not mask[r, c] == 255 or flags[i][r, c] == 1:
+                    r = choice(range(radius, rs-radius))
+                    c = choice(range(radius, cs-radius))
+                image = img[r-radius:r+radius+1, c-radius:c+radius+1, :]
+                image = cv2.resize(image, (25, 25))
+                images.append(image)
+                classes.append(label)
+                num[label] += 1
+                flags[i][r, c] = 1
 
     print(np.array(images).shape)
     x = np.array(images, dtype = np.float32)
