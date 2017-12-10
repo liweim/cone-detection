@@ -6,7 +6,7 @@ python3 merge_txt.py --img_path tmp/1054/1054.tiff
 
 python3 merge_data.py --from_data 19 --to_data 11
 
-python select_region.py --cone_id 1 --img_path ZED/1/rectify/left/2.png
+python select_region.py --cone_id 1 --img_path ZED/3/left/1.png
 
 python3 annotation.py --img_path tmp/999/30.png --data data/14
 
@@ -28,7 +28,7 @@ python3 train_model_segmantic.py --train_num 10000
 
 python3 cone_detect_depth.py
 
-python rectify_all.py --img_folder_path ZED/1/stereo
+python rectify_all.py --img_folder_path ZED/3/stereo
 
 python reconstruction.py --img_path ZED/1/stereo/2.png
 

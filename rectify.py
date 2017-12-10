@@ -5,16 +5,22 @@ from os.path import join
 import matplotlib.pyplot as plt
 import argparse
 
-mtx_left = np.array([[699.8341, 0, 670.6991], [0, 699.9473, 327.9933], [0, 0, 1]])
-dist_left = np.array([-0.1708, 0.0267, 0, 0, 0])
-mtx_right = np.array([[702.2891, 0, 667.0359], [0, 701.5237, 358.7018], [0, 0, 1]])
-dist_right = np.array([-0.1733, 0.0275, 0, 0, 0])
+mtx_left = np.array([[350.6847, 0, 332.4661],
+    [0, 350.0606, 163.7461],
+    [0, 0, 1]])
+dist_left = np.array([-0.1674, 0.0158, 0.0057, 0, 0])
+mtx_right = np.array([[351.9498, 0, 329.4456],
+    [0, 351.0426, 179.0179],
+    [0, 0, 1]])
+dist_right = np.array([-0.1700, 0.0185, 0.0048, 0, 0])
 
-R = np.array([[0.9998, -0.0016, -0.0215], [0.0016, 1, -0.0021], [0.0215, 0.0020, 0.9998]])
-R = np.transpose(R)
-T = np.array([-119.1632, 0.2062, 0.0252])
+R = np.array([[0.9997, 0.0015, 0.0215],
+    [-0.0015, 1, -0.00008],
+    [-0.0215, 0.00004, 0.9997]])
+#R = np.transpose(R)
+T = np.array([-119.1807, 0.1532, 1.1225])
 
-F = 700
+F = 350
 d = 120
 
 def callback(x):
@@ -75,8 +81,8 @@ def rectify(img_path):
     left = img[:, :col]
     right = img[:, col:]
 
-    row = 1280
-    col = 720
+    row = 640
+    col = 360
     left = cv2.resize(left, (row, col))
     right = cv2.resize(right, (row, col))
 
@@ -110,14 +116,11 @@ def rectify(img_path):
     left_rect = cv2.remap(left, map1x, map1y, cv2.INTER_LINEAR)
     right_rect = cv2.remap(right, map2x, map2y, cv2.INTER_LINEAR)
 
-    left_rect = cv2.resize(left_rect, (320, 180))
-    right_rect = cv2.resize(right_rect, (320, 180))
-    '''
-    left_save_path = join('ZED', num, 'rectify', 'left', basename)
-    right_save_path = join('ZED', num, 'rectify', 'right', basename)
+    left_save_path = join('ZED', num, 'left', basename)
+    right_save_path = join('ZED', num, 'right', basename)
     cv2.imwrite(left_save_path, left_rect)
     cv2.imwrite(right_save_path, right_rect)
-    '''
+
     return left_rect, right_rect
 
 '''

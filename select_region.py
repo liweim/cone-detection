@@ -7,8 +7,7 @@ import argparse
 def callback(x):
     pass
 
-def select_region(model_id, plant_id, img_path):
-    img_path = join('tmp', plant_id, plant_id, plant_id+'_'+img_path)
+def select_region(cone_id, img_path):
     img = cv2.imread(img_path)
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     row, col = img.shape[:2]
@@ -77,16 +76,15 @@ def select_region(model_id, plant_id, img_path):
                 mask_roi[r, c] = 255
             else:
                 mask_roi[r, c] = 100
-    n = len(os.listdir(join('images', model_id)))
-    basename = plant_id+'_'+str(n+1)+'.png'
-    cv2.imwrite(join('images', model_id, basename), img_roi)
-    cv2.imwrite(join('annotations', model_id, basename), mask_roi)
+    n = len(os.listdir(join('images', cone_id)))
+    basename = cone_id+'_'+str(n+1)+'.png'
+    cv2.imwrite(join('images', cone_id, basename), img_roi)
+    cv2.imwrite(join('annotations', cone_id, basename), mask_roi)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_id", type=str, help="Which plant to detect.")
-    parser.add_argument("--plant_id", type=str, help="Plant id.")
+    parser.add_argument("--cone_id", type=str, help="Which plant to detect.")
     parser.add_argument("--img_path", type=str, help="Image to analyze.")
     args = parser.parse_args()
 
-    select_region(model_id = args.model_id, plant_id = args.plant_id, img_path = args.img_path)
+    select_region(cone_id = args.cone_id, img_path = args.img_path)
