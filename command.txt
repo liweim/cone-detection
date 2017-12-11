@@ -24,7 +24,7 @@ python3 csv2shp.py --i tmp/915/915.txt --o tmp/915/915.geojson --t tmp/915/915.t
 
 python annotate_region.py --cone_id 1 --img_path ZED/1/rectify/left/2.png
 
-python3 train_model_segmantic.py --train_num 10000
+python train_model_segmantic.py --train_num 100
 
 python3 cone_detect_depth.py
 
@@ -36,6 +36,8 @@ python annotation.py --img_path ZED/1/rectify/left/2.png --data data/yellow
 
 python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/model_cone --cone_distance 50 --threshold 0.9
 
-g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread
+g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread -o train_model_segmentic
+
+g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_model_segmentic
 
 ./a.out --data_path data_cifar10

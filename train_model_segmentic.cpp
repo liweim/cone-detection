@@ -8,52 +8,36 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include "tiny_dnn/tiny_dnn.h"
+
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 using namespace boost::filesystem;
 
-#include "tiny_dnn/tiny_dnn.h"
-
-template <typename N>
-
-//my codes
-void convert_image(const std::string &imagefilename,
-                   double minv,
-                   double maxv,
+// convert image to vec_t
+void convert_image(const std::string& imagefilename,
+                   double scale,
                    int w,
                    int h,
-                   tiny_dnn::vec_t &data) {
-  tiny_dnn::image<> img(imagefilename, tiny_dnn::image_type::rgb);
-  tiny_dnn::image<> resized = resize_image(img, w, h);
-  data.resize(resized.width() * resized.height() * resized.depth());
-  for (size_t c = 0; c < resized.depth(); ++c) {
-    for (size_t y = 0; y < resized.height(); ++y) {
-      for (size_t x = 0; x < resized.width(); ++x) {
-        data[c * resized.width() * resized.height() + y * resized.width() + x] =
-          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
-      }
-    }
-  }
-}
-
-// convert all images found in directory to vec_t
-void convert_images(const std::string& directory,
-                    double minv,
-                    double maxv,
-                    int w,
-                    int h,
-                    tiny_dnn::vec_t &data)
+                   std::vector<tiny_dnn::vec_t>& data)
 {
-    path dpath(directory);
+    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
+    if (img.data == nullptr) return; // cannot open, or it's not an image
 
-    BOOST_FOREACH(const path& p,
-                  std::make_pair(directory_iterator(dpath), directory_iterator())) {
-        if (is_directory(p)) continue;
-        convert_image(p.string(), minv, maxv, w, h, data);
-    }
+    cv::Mat_<uint8_t> resized;
+    cv::resize(img, resized, cv::Size(w, h));
+    /*
+    vec_t d;
+
+    std::transform(resized.begin(), resized.end(), std::back_inserter(d),
+                   [=](uint8_t c) { return c * scale; });
+    data.push_back(d);
+    */
 }
-//my codes
 
+template <typename N>
 void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using conv    = tiny_dnn::convolutional_layer;
   using pool    = tiny_dnn::max_pooling_layer;
@@ -109,7 +93,6 @@ void train_cifar10(std::string data_dir_path,
                 -1.0, 1.0, 0, 0);
 
   std::cout << "start learning" << std::endl;
-  std::cout << train_images[0].size() << std::endl;
 
   tiny_dnn::progress_display disp(train_images.size());
   tiny_dnn::timer t;
@@ -167,8 +150,8 @@ static void usage(const char *argv0) {
 }
 
 int main(int argc, char **argv) {
-  std::vector<tiny_dnn::vec_t> train_images;
-  convert_image("data/yellow", 0, 1, 25, 25, train_images);
+  //std::vector<tiny_dnn::vec_t> train_image;
+
   /*
   double learning_rate                   = 0.01;
   int epochs                             = 30;
