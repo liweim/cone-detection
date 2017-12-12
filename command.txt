@@ -38,6 +38,8 @@ python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/
 
 g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread -o train_model_segmentic
 
+./train_model_segmentic --data_path idx
+
 g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_model_segmentic
 
 ./mnisten -d images -s 100x100

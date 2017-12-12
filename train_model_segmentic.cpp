@@ -8,8 +8,11 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+
 #include "tiny_dnn/tiny_dnn.h"
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <boost/foreach.hpp>
@@ -18,37 +21,30 @@ using namespace boost::filesystem;
 
 // convert image to vec_t
 void convert_image(const std::string& imagefilename,
-                   double scale,
                    int w,
                    int h,
-                   std::vector<tiny_dnn::vec_t>& data)
+                   std::vector<tiny_dnn::vec_t>& data,
+                   std::vector<tiny_dnn::label_t>& label)
 {
-    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
-    if (img.data == nullptr) return; // cannot open, or it's not an image
-
-    cv::Mat_<uint8_t> resized;
-    cv::resize(img, resized, cv::Size(w, h));
-
-    tiny_dnn::vec_t d;
-
-    std::transform(resized.begin(), resized.end(), std::back_inserter(d),
-                   [=](uint8_t c) { return c * scale; });
-    data.push_back(d);
+  tiny_dnn::image<> img(imagefilename, tiny_dnn::image_type::rgb);
+  img = tiny_dnn::resize_image(img, w, h);
+  data.push_back(img.to_vec());
+  label.push_back(0);
 }
 
 // convert all images found in directory to vec_t
 void convert_images(const std::string& directory,
-                    double scale,
                     int w,
                     int h,
-                    std::vector<tiny_dnn::vec_t>& data)
+                    std::vector<tiny_dnn::vec_t>& data,
+                    std::vector<tiny_dnn::label_t>& label)
 {
     path dpath(directory);
 
     BOOST_FOREACH(const path& p,
                   std::make_pair(directory_iterator(dpath), directory_iterator())) {
         if (is_directory(p)) continue;
-        convert_image(p.string(), scale, w, h, data);
+        convert_image(p.string(), w, h, data, label);
     }
 }
 
@@ -99,13 +95,8 @@ void train_cifar10(std::string data_dir_path,
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
 
-  for (int i = 1; i <= 5; i++) {
-    parse_cifar10(data_dir_path + "/data_batch_" + std::to_string(i) + ".bin",
-                  &train_images, &train_labels, -1.0, 1.0, 0, 0);
-  }
-
-  parse_cifar10(data_dir_path + "/test_batch.bin", &test_images, &test_labels,
-                -1.0, 1.0, 0, 0);
+  convert_images(data_dir_path+"/images/background", 32, 32, train_images, train_labels);
+  convert_images(data_dir_path+"/images/yellow", 32, 32, test_images, test_labels);
 
   std::cout << "start learning" << std::endl;
 
@@ -165,9 +156,6 @@ static void usage(const char *argv0) {
 }
 
 int main(int argc, char **argv) {
-  //std::vector<tiny_dnn::vec_t> train_image;
-
-  /*
   double learning_rate                   = 0.01;
   int epochs                             = 30;
   std::string data_path                  = "";
@@ -237,5 +225,4 @@ int main(int argc, char **argv) {
   } catch (tiny_dnn::nn_error &err) {
     std::cerr << "Exception: " << err.what() << std::endl;
   }
-  */
 }
