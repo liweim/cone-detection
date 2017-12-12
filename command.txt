@@ -40,4 +40,4 @@ g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 
 
 g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_model_segmentic
 
-./a.out --data_path data_cifar10
+./mnisten -d images -s 100x100

@@ -28,13 +28,28 @@ void convert_image(const std::string& imagefilename,
 
     cv::Mat_<uint8_t> resized;
     cv::resize(img, resized, cv::Size(w, h));
-    /*
-    vec_t d;
+
+    tiny_dnn::vec_t d;
 
     std::transform(resized.begin(), resized.end(), std::back_inserter(d),
                    [=](uint8_t c) { return c * scale; });
     data.push_back(d);
-    */
+}
+
+// convert all images found in directory to vec_t
+void convert_images(const std::string& directory,
+                    double scale,
+                    int w,
+                    int h,
+                    std::vector<tiny_dnn::vec_t>& data)
+{
+    path dpath(directory);
+
+    BOOST_FOREACH(const path& p,
+                  std::make_pair(directory_iterator(dpath), directory_iterator())) {
+        if (is_directory(p)) continue;
+        convert_image(p.string(), scale, w, h, data);
+    }
 }
 
 template <typename N>
