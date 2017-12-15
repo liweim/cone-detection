@@ -38,6 +38,13 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
      << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
      << relu()                                            // activation
      << fc(n_fc, 10, true, backend_type) << softmax(10);  // FC10
+
+  for (int i = 0; i < nn.depth(); i++) {
+       cout << "#layer:" << i << "\n";
+       cout << "layer type:" << nn[i]->layer_type() << "\n";
+       cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
+       cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
+   }
 }
 
 void train_cifar10(std::string data_dir_path,

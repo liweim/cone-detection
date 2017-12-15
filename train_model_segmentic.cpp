@@ -21,37 +21,58 @@ using namespace boost::filesystem;
 using namespace tiny_dnn;
 using namespace std;
 
-// convert image to vec_t
-void convert_image(const string& imagefilename,
+void convert_image(const string &imagefilename,
+                   double minv,
+                   double maxv,
                    int w,
                    int h,
-                   vector<vec_t>& data,
-                   vector<label_t>& label)
-{
-  image<> img(imagefilename, image_type::rgb);
-  img = resize_image(img, w, h);
-  data.push_back(img.to_vec());
-  label.push_back(0);
+                   vec_t &data) {
+
+  image<> img(imagefilename, tiny_dnn::image_type::rgb);
+  image<> resized = resize_image(img, w, h);
+  data.resize(resized.width() * resized.height() * resized.depth());
+  for (size_t c = 0; c < resized.depth(); ++c) {
+    for (size_t y = 0; y < resized.height(); ++y) {
+      for (size_t x = 0; x < resized.width(); ++x) {
+        data[c * resized.width() * resized.height() + y * resized.width() + x] =
+          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
+      }
+    }
+  }
 }
 
 // convert all images found in directory to vec_t
-void convert_images(const string& directory,
+void load_data(const string& directory,
+                    double minv,
+                    double maxv,
                     int w,
                     int h,
-                    vector<vec_t>& data,
-                    vector<label_t>& label)
+                    vector<vec_t>& train_imgs,
+                    vector<label_t>& train_labels,
+                    vector<vec_t>& test_imgs,
+                    vector<label_t>& test_labels)
 {
     path dpath(directory);
+    int label_id;
+    vec_t data;
+    double random;
 
     BOOST_FOREACH(const path& label_path, make_pair(directory_iterator(dpath), directory_iterator())) {
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const path& img_path, make_pair(directory_iterator(label_path), directory_iterator())) {
-          string label_id = label_path.filename().string();
-          //cout << img_path.string() << " " << label_id << endl;
-          image<> img(img_path.string(), image_type::rgb);
-          img = resize_image(img, w, h);
-          data.push_back(img.to_vec());
-          label.push_back(stoi(label_id));
+          label_id = stoi(label_path.filename().string());
+          convert_image(img_path.string(), minv, maxv, w, h, data);
+
+          random = (double)rand()/(double)RAND_MAX;
+          if (random < 0.7){
+            train_labels.push_back(label_id);
+            train_imgs.push_back(data);
+          }
+          else{
+            test_labels.push_back(label_id);
+            test_imgs.push_back(data);
+          }
+
       }
     }
 }
@@ -59,30 +80,47 @@ void convert_images(const string& directory,
 template <typename N>
 void construct_net(N &nn, core::backend_t backend_type) {
   using conv    = convolutional_layer;
+  using dropout = dropout_layer;
   using pool    = max_pooling_layer;
   using fc      = fully_connected_layer;
   using relu    = relu_layer;
   using softmax = softmax_layer;
 
-  const size_t n_fmaps  = 32;  // number of feature maps for upper layer
-  const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
-  const size_t n_fc     = 64;  // number of hidden units in fc layer
+  // const size_t n_fmaps  = 32;  // number of feature maps for upper layer
+  // const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
+  // const size_t n_fc     = 64;  // number of hidden units in fc layer
 
-  nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
-             backend_type)                      // C1
-     << pool(32, 32, n_fmaps, 2, backend_type)  // P2
-     << relu()                                  // activation
-     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
-             backend_type)                      // C3
-     << pool(16, 16, n_fmaps, 2, backend_type)  // P4
-     << relu()                                  // activation
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
-             backend_type)                                // C5
-     << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
-     << relu()                                            // activation
-     << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
-     << relu()                                            // activation
-     << fc(n_fc, 10, true, backend_type) << softmax(10);  // FC10
+  // nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
+  //            backend_type)                      // C1
+  //    << pool(32, 32, n_fmaps, 2, backend_type)  // P2
+  //    << relu()                                  // activation
+  //    << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
+  //            backend_type)                      // C3
+  //    << pool(16, 16, n_fmaps, 2, backend_type)  // P4
+  //    << relu()                                  // activation
+  //    << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
+  //            backend_type)                                // C5
+  //    << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
+  //    << relu()                                            // activation
+  //    << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
+  //    << relu()                                            // activation
+  //    << fc(n_fc, 10, true, backend_type) << softmax(10);  // FC10
+  const size_t input_size  = 25;
+  nn << conv(input_size, input_size, 7, 3, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-6, input_size-6, 7, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-12)*(input_size-12)*32, 0.25)
+     << conv(input_size-12, input_size-12, 5, 32, 64, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-16, input_size-16, 5, 64, 64, padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-20)*(input_size-20)*64, 0.25)
+     << conv(input_size-20, input_size-20, 3, 64, 128, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-22, input_size-22, 3, 128, 3, padding::valid, true, 1, 1, backend_type) << softmax();
+
+   for (int i = 0; i < nn.depth(); i++) {
+        cout << "#layer:" << i << "\n";
+        cout << "layer type:" << nn[i]->layer_type() << "\n";
+        cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
+        cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
+    }
 }
 
 void train_cifar10(string data_dir_path,
@@ -103,8 +141,7 @@ void train_cifar10(string data_dir_path,
   vector<label_t> train_labels, test_labels;
   vector<vec_t> train_images, test_images;
 
-  convert_images(data_dir_path, 32, 32, train_images, train_labels);
-  convert_images(data_dir_path, 32, 32, test_images, test_labels);
+  load_data(data_dir_path, 0, 1, 25, 25, train_images, train_labels, test_images, test_labels);
 
   cout << "start learning" << endl;
 
