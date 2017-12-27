@@ -36,12 +36,14 @@ python annotation.py --img_path ZED/1/rectify/left/2.png --data data/yellow
 
 python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/model_cone --cone_distance 50 --threshold 0.9
 
-g++ train_model_segmentic.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_model_segmentic
+g++ train_sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_model_segmentic
 
 ./train_model_segmentic --data_path data --epochs 20
 
-g++ cone_detect_efficient.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o cone_detect_efficient
+g++ sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o cone_detect_efficient
 
 ./cone_detect_efficient data/1/1.png
 
 ./mnisten -d images -s 100x100
+
+g++ train.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train

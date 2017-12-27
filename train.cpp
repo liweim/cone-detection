@@ -38,13 +38,6 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
      << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
      << relu()                                            // activation
      << fc(n_fc, 10, true, backend_type) << softmax(10);  // FC10
-
-  for (int i = 0; i < nn.depth(); i++) {
-       cout << "#layer:" << i << "\n";
-       cout << "layer type:" << nn[i]->layer_type() << "\n";
-       cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
-       cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
-   }
 }
 
 void train_cifar10(std::string data_dir_path,
@@ -74,6 +67,9 @@ void train_cifar10(std::string data_dir_path,
                 -1.0, 1.0, 0, 0);
 
   std::cout << "start learning" << std::endl;
+  for(int i=0;i<train_labels.size();i++){
+    std::cout << train_labels[i] << std::endl;
+  }
 
   tiny_dnn::progress_display disp(train_images.size());
   tiny_dnn::timer t;
@@ -106,7 +102,7 @@ void train_cifar10(std::string data_dir_path,
   // test and show results
   nn.test(test_images, test_labels).print_detail(std::cout);
   // save networks
-  std::ofstream ofs("cifar-weights");
+  std::ofstream ofs("models/sliding_window");
   ofs << nn;
 }
 
