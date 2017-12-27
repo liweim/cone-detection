@@ -85,36 +85,50 @@ void construct_net(N &nn, core::backend_t backend_type) {
   using fc      = fully_connected_layer;
   using relu    = relu_layer;
   using softmax = softmax_layer;
+  using sigmoid = sigmoid_layer;
 
-  const size_t n_fmaps  = 32;  // number of feature maps for upper layer
-  const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
-  const size_t n_fc     = 64;  // number of hidden units in fc layer
+  // const size_t n_fmaps  = 32;  // number of feature maps for upper layer
+  // const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
+  // const size_t n_fc     = 64;  // number of hidden units in fc layer
+  //
+  // nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
+  //            backend_type)                      // C1
+  //    << pool(32, 32, n_fmaps, 2, backend_type)  // P2
+  //    << relu()                                  // activation
+  //    << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
+  //            backend_type)                      // C3
+  //    << pool(16, 16, n_fmaps, 2, backend_type)  // P4
+  //    << relu()                                  // activation
+  //    << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
+  //            backend_type)                                // C5
+  //    << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
+  //    << relu()                                            // activation
+  //    << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
+  //    << relu()                                            // activation
+  //    << fc(n_fc, 3, true, backend_type) << softmax(3);  // FC10
 
-  nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
-             backend_type)                      // C1
-     << pool(32, 32, n_fmaps, 2, backend_type)  // P2
-     << relu()                                  // activation
-     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
-             backend_type)                      // C3
-     << pool(16, 16, n_fmaps, 2, backend_type)  // P4
-     << relu()                                  // activation
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
-             backend_type)                                // C5
-     << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
-     << relu()                                            // activation
-     << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
-     << relu()                                            // activation
-     << fc(n_fc, 3, true, backend_type) << softmax(3);  // FC10
+  // nn << conv(32, 32, 5, 3, 32, padding::same)  // C1
+  //    << pool(32, 32, 32, 2)                              // P2
+  //    << relu(16, 16, 32)                                 // activation
+  //    << conv(16, 16, 5, 32, 32, padding::same)  // C3
+  //    << pool(16, 16, 32, 2)                                    // P4
+  //    << relu(8, 8, 32)                                        // activation
+  //    << conv(8, 8, 5, 32, 64, padding::same)  // C5
+  //    << pool(8, 8, 64, 2)                                    // P6
+  //    << relu(4, 4, 64)                                       // activation
+  //    << conv(4, 4, 5, 64, 3, padding::same)
+  //    << pool(4, 4, 3, 4)
+  //    << softmax(3);
 
-  // const size_t input_size  = 25;
-  // nn << conv(input_size, input_size, 7, 3, 32, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-6, input_size-6, 7, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << dropout((input_size-12)*(input_size-12)*32, 0.25)
-  //    << conv(input_size-12, input_size-12, 5, 32, 64, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-16, input_size-16, 5, 64, 64, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << dropout((input_size-20)*(input_size-20)*64, 0.25)
-  //    << conv(input_size-20, input_size-20, 3, 64, 128, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-22, input_size-22, 3, 128, 3, padding::valid, true, 1, 1, backend_type) << softmax(3);
+  const size_t input_size  = 25;
+  nn << conv(input_size, input_size, 7, 3, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-6, input_size-6, 7, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     //<< dropout((input_size-12)*(input_size-12)*32, 0.25)
+     << conv(input_size-12, input_size-12, 5, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-16, input_size-16, 5, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     //<< dropout((input_size-20)*(input_size-20)*32, 0.25)
+     << conv(input_size-20, input_size-20, 3, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-22, input_size-22, 3, 32, 3, padding::valid, true, 1, 1, backend_type) << softmax(3);
 
    for (int i = 0; i < nn.depth(); i++) {
         cout << "#layer:" << i << "\n";
@@ -142,7 +156,7 @@ void train_cifar10(string data_dir_path,
   vector<label_t> train_labels, test_labels;
   vector<vec_t> train_images, test_images;
 
-  load_data(data_dir_path, 0, 1, 32, 32, train_images, train_labels, test_images, test_labels);
+  load_data(data_dir_path, 0, 1, 25, 25, train_images, train_labels, test_images, test_labels);
 
   cout << "start learning" << endl;
 
