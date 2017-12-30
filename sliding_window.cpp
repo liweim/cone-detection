@@ -14,9 +14,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
-using namespace tiny_dnn;
-using namespace std;
-
 // rescale output to 0-100
 template <typename Activation>
 double rescale(double x) {
@@ -24,15 +21,15 @@ double rescale(double x) {
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-void convert_image(const string &imagefilename,
+void convert_image(const std::string &src_filename,
                    double minv,
                    double maxv,
                    int w,
                    int h,
-                   vec_t &data) {
+                   tiny_dnn::vec_t &data) {
 
-  image<> img(imagefilename, tiny_dnn::image_type::rgb);
-  image<> resized = resize_image(img, w, h);
+  tiny_dnn::image<> img(src_filename, tiny_dnn::image_type::rgb);
+  tiny_dnn::image<> resized = tiny_dnn::resize_image(img, w, h);
   data.resize(resized.width() * resized.height() * resized.depth());
   for (size_t c = 0; c < resized.depth(); ++c) {
     for (size_t y = 0; y < resized.height(); ++y) {
@@ -45,49 +42,23 @@ void convert_image(const string &imagefilename,
 }
 
 template <typename N>
-void construct_net(N &nn, core::backend_t backend_type, const size_t input_size) {
-  using conv    = convolutional_layer;
-  using dropout = dropout_layer;
-  using pool    = max_pooling_layer;
-  using fc      = fully_connected_layer;
-  using relu    = relu_layer;
-  using softmax = softmax_layer;
-  using sigmoid = sigmoid_layer;
+void construct_net(N &nn, tiny_dnn::core::backend_t backend_type, int width, int height) {
+  using conv    = tiny_dnn::convolutional_layer;
+  using dropout = tiny_dnn::dropout_layer;
+  using pool    = tiny_dnn::max_pooling_layer;
+  using fc      = tiny_dnn::fully_connected_layer;
+  using relu    = tiny_dnn::relu_layer;
+  using softmax = tiny_dnn::softmax_layer;
+  using sigmoid = tiny_dnn::sigmoid_layer;
 
-  // const size_t n_fmaps  = 32;  ///< number of feature maps for upper layer
-  // const size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
-  // const size_t n_fc = 64;  ///< number of hidden units in fully-connected layer
-
-  // nn << conv(32, 32, 5, 3, n_fmaps, padding::same)  // C1
-  //    << pool(32, 32, n_fmaps, 2)                              // P2
-  //    << relu(16, 16, n_fmaps)                                 // activation
-  //    << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)  // C3
-  //    << pool(16, 16, n_fmaps, 2)                                    // P4
-  //    << relu(8, 8, n_fmaps)                                        // activation
-  //    << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)  // C5
-  //    << pool(8, 8, n_fmaps2, 2)                                    // P6
-  //    << relu(4, 4, n_fmaps2)                                       // activation
-  //    << fc(4 * 4 * n_fmaps2, n_fc)                                 // FC7
-  //    << fc(n_fc, 3) << softmax(3);                               // FC10
-
-  nn << conv(input_size, input_size, 7, 3, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-6, input_size-6, 7, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+  nn << conv(width, height, 7, 3, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-6, height-6, 7, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      //<< dropout((input_size-12)*(input_size-12)*32, 0.25)
-     << conv(input_size-12, input_size-12, 5, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-16, input_size-16, 5, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-12, height-12, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-16, height-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      //<< dropout((input_size-20)*(input_size-20)*32, 0.25)
-     << conv(input_size-20, input_size-20, 3, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-22, input_size-22, 3, 32, 3, padding::valid, true, 1, 1, backend_type);
-
-  // const size_t input_size  = 25;
-  // nn << conv(input_size, input_size, 7, 3, 32, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-6, input_size-6, 7, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << dropout((input_size-12)*(input_size-12)*32, 0.25)
-  //    << conv(input_size-12, input_size-12, 5, 32, 64, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-16, input_size-16, 5, 64, 64, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << dropout((input_size-20)*(input_size-20)*64, 0.25)
-  //    << conv(input_size-20, input_size-20, 3, 64, 128, padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-22, input_size-22, 3, 128, 3, padding::valid, true, 1, 1, backend_type) << softmax(3);
+     << conv(width-20, height-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-22, height-22, 3, 32, 3, tiny_dnn::padding::valid, true, 1, 1, backend_type);
 
   //  for (int i = 0; i < nn.depth(); i++) {
   //       cout << "#layer:" << i << "\n";
@@ -97,20 +68,19 @@ void construct_net(N &nn, core::backend_t backend_type, const size_t input_size)
   //   }
 }
 
-void softmax(vec_t &x, vec_t &y){
-    float_t alpha = *max_element(x.begin(), x.end());
+void softmax(std::vector<float_t> &x, std::vector<float_t> &y){
     float_t denominator(0);
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] = exp(x[j] - alpha);
+    for (int j = 0; j < x.size(); j++) {
+      y[j] = exp(x[j]);
       denominator += y[j];
     }
-    for (size_t j = 0; j < x.size(); j++) {
+    for (int j = 0; j < x.size(); j++) {
       y[j] /= denominator;
     }
   }
 
-vector <cv::Point> GetLocalMaxima(const cv::Mat Src,int MatchingSize, int Threshold){
-  vector <cv::Point> vMaxLoc(0);
+std::vector <cv::Point> GetLocalMaxima(const cv::Mat Src,int MatchingSize, float_t Threshold){
+  std::vector <cv::Point> vMaxLoc(0);
   vMaxLoc.reserve(100); // Reserve place for fast access
   cv::Mat ProcessImg = Src.clone();
   int W = Src.cols;
@@ -120,8 +90,8 @@ vector <cv::Point> GetLocalMaxima(const cv::Mat Src,int MatchingSize, int Thresh
   int MatchingSquareCenter = MatchingSize/2;
 
   cv::GaussianBlur(ProcessImg, ProcessImg, cv::Size(3, 3), 0.5, 0.5);
-  cout << ProcessImg << endl;
-  uchar* pProcess = (uchar *) ProcessImg.data; // The pointer to image Data
+  std::cout << ProcessImg << std::endl;
+  float_t* pProcess = (float_t*) ProcessImg.data;
 
   int Shift = MatchingSquareCenter * ( W + 1);
   int k = 0;
@@ -133,6 +103,7 @@ vector <cv::Point> GetLocalMaxima(const cv::Mat Src,int MatchingSize, int Thresh
     {
       if (pProcess[m++] >= Threshold)
       {
+        std::cout << pProcess[m] << std::endl;
         cv::Point LocMax;
         cv::Mat mROI(ProcessImg, cv::Rect(x,y,MatchingSize,MatchingSize));
         cv::minMaxLoc(mROI,NULL,NULL,NULL,&LocMax);
@@ -145,53 +116,69 @@ vector <cv::Point> GetLocalMaxima(const cv::Mat Src,int MatchingSize, int Thresh
     }
     k += W;
   }
-  cout<<vMaxLoc<<endl;
+  std::cout << vMaxLoc << std::endl;
   return vMaxLoc;
 }
 
-void recognize(const string &dictionary, const string &src_filename) {
-  size_t patch_size  = 26;
-  int radius = (patch_size-1)/2;
-  int pad_size  = patch_size - 25 + 1;
+void recognize(const std::string &dictionary, const std::string &src_filename) {
+  int width  = 25;
+  int height = 25;
+  int radius_width = (width-1)/2;
+  int radius_height = (height-1)/2;
+  int patch_size = 25;
+  int pad_width  = width - patch_size + 1;
+  int pad_height  = height - patch_size + 1;
 
-  network<sequential> nn;
+  tiny_dnn::network<tiny_dnn::sequential> nn;
 
-  construct_net(nn, core::default_engine(), patch_size);
+  construct_net(nn, tiny_dnn::core::default_engine(), width, height);
 
   // load nets
-  ifstream ifs(dictionary.c_str());
+  std::ifstream ifs(dictionary.c_str());
   ifs >> nn;
 
   // convert imagefile to vec_t
-  vec_t data;
-  convert_image(src_filename, 0, 1.0, patch_size, patch_size, data);
+  tiny_dnn::vec_t data;
+
+  convert_image(src_filename, 0, 1.0, width, height, data);
 
   // recognize
   auto prob = nn.predict(data);
 
-
-  cv::Mat prob_map[2] = cv::Mat::zeros(patch_size, patch_size, CV_32FC1);
+  cv::Mat prob_map[2] = cv::Mat::zeros(width, height, CV_32FC1);
   int r, c;
   for(int i=0; i<prob.size(); i+=3){
-    vec_t prob_temp;
-    prob_temp.push_back(prob[i]);
-    prob_temp.push_back(prob[i+1]);
-    prob_temp.push_back(prob[i+2]);
-    softmax(prob_temp, prob_temp);
-    cout << "yellow: " << prob_temp[1] << ", blue: " << prob_temp[2] << endl;
+    std::vector<float_t> prob_temp(&prob[i], &prob[i+3]), prob_softmax(3);
+    softmax(prob_temp, prob_softmax);
+    std::cout << "yellow: " << prob_softmax[1] << ", blue: " << prob_softmax[2] << std::endl;
 
-    r = i/3 / pad_size;
-    c = i/3 % pad_size;
-    prob_map[0].at<float_t>(radius+r, radius+c) = float_t(prob_temp[1]);
-    prob_map[1].at<float_t>(radius+r, radius+c) = float_t(prob_temp[2]);
+    r = i/3 / pad_width;
+    c = i/3 % pad_height;
+    prob_map[0].at<float_t>(radius_width+r, radius_height+c) = float_t(prob_softmax[1]);
+    prob_map[1].at<float_t>(radius_width+r, radius_height+c) = float_t(prob_softmax[2]);
   }
 
   cv::Mat yellow_map, blue_map;
-  vector <cv::Point> yellow, blue;
+  std::vector <cv::Point> yellow, blue;
 
-  yellow =  GetLocalMaxima(prob_map[0], 3, 0.5);
-  blue =  GetLocalMaxima(prob_map[1], 3, 0.5);
+  yellow =  GetLocalMaxima(prob_map[0], 3, 0.6);
+  blue =  GetLocalMaxima(prob_map[1], 3, 0.6);
 
+  cv::Mat img = cv::imread(src_filename);
+  cv::resize(img, img, cv::Size(width, height));
+  if (yellow.size()>0){
+    for(int i=0; i<yellow.size(); i++){
+      cv::circle(img, yellow[i], 1, {0, 255, 255}, 1);
+    }
+  }
+  if (blue.size()>0){
+    for(int i=0; i<blue.size(); i++){
+      cv::circle(img, blue[i], 1, {255, 0, 0}, 1);
+    }
+  }
+  cv::namedWindow("img", cv::WINDOW_NORMAL);
+  cv::imshow("img", img);
+  cv::waitKey(0);
   // cv::imshow("yellow", yellow_map);
   // cv::waitKey(0);
   // vector<pair<double, int>> scores;
@@ -208,7 +195,7 @@ void recognize(const string &dictionary, const string &src_filename) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    cout << "please specify image file";
+    std::cout << "please specify image file";
     return 0;
   }
   recognize("models/sliding_window", argv[1]);
