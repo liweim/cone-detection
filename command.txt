@@ -38,12 +38,12 @@ python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/
 
 g++ train_sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_sliding_window
 
-./train_sliding_window --data_path data_cone --epochs 20
+./train_sliding_window --data_path data --epochs 30
 
 g++ sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o sliding_window
 
-./sliding_window data/1/1.png
+./sliding_window test.png
 
-./mnisten -d images -s 100x100
+g++ efficient_sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o efficient_sliding_window
 
-g++ train.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train
+./efficient_sliding_window test.png 25 25
