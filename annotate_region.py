@@ -4,52 +4,40 @@ import os
 from os.path import join
 import argparse
 import pylab as pl
+import matplotlib.pyplot as plt
+from Utils import write_txt
 
 def callback(x):
     pass
 
-def annotate_region(cone_id, img_path):
+def annotate_region(model_id, img_path, mode):
     img = cv2.imread(img_path)
     row, col = img.shape[:2]
-    mask = np.copy(img)
-    mask[:] = 0
 
-    r = cv2.selectROI('mask', img)
-    cl = max(int(r[0]), 0)
-    cr = min(int(r[0]+r[2]), col)
-    rl = max(int(r[1]), 0)
-    rr = min(int(r[1]+r[3]), row)
-    img_roi = img[rl:rr, cl:cr]
-    mask_roi = mask[rl:rr, cl:cr]
+    plt.imshow(img[:,:,::-1])
+    points = np.round(pl.ginput(1000, timeout = 10^10))
 
-    result = cv2.hconcat((img_roi, mask_roi))
-    cv2.namedWindow("mask", cv2.WINDOW_NORMAL)
-    row, col = img_roi.shape[:2]
-
-    while(1):
-        k = cv2.waitKey(0) & 0xFF
-        if k == 27:
-            break
-
-        cv2.namedWindow("mask", cv2.WINDOW_NORMAL)
-        r = cv2.selectROI('mask', result)
-        cl = max(int(r[0]), 0)
-        cr = min(int(r[0]+r[2]), col)
-        rl = max(int(r[1]), 0)
-        rr = min(int(r[1]+r[3]), row)
-        mask_roi[rl:rr, cl:cr] = img_roi[rl:rr, cl:cr]
-        result = cv2.hconcat((img_roi, mask_roi))
-        cv2.imshow('mask', result)
-
-    n = len(os.listdir(join('images', cone_id)))
-    basename = str(n+1)+'.png'
-    cv2.imwrite(join('images', cone_id, basename), img_roi)
-    cv2.imwrite(join('annotations', cone_id, basename), mask_roi)
+    radius = 30
+    for point in points:
+        xy = []
+        xy.append([1, mode]) #good:0, bad:1, good+bad:-1
+        xy.append([30, 30])
+        x = int(point[0])
+        y = int(point[1])
+        cl = max(int(y-radius), 0)
+        cr = min(int(y+radius), row)
+        rl = max(int(x-radius), 0)
+        rr = min(int(x+radius), col)
+        img_roi = img[cl:cr,rl:rr]
+        n = len(os.listdir(join('images', model_id)))
+        cv2.imwrite(join('images', model_id, str(n+1)+'.png'), img_roi)
+        write_txt(join('annotations', model_id, str(n+1)+'.txt'), np.array(xy), way='w')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cone_id", type=str, help="Plant id.")
-    parser.add_argument("--img_path", type=str, help="Image to analyze.")
+    parser.add_argument("--model_id", type=str)
+    parser.add_argument("--img_path", type=str)
+    parser.add_argument("--mode", type=int)
     args = parser.parse_args()
 
-    annotate_region(cone_id = args.cone_id, img_path = args.img_path)
+    annotate_region(model_id = args.model_id, img_path = args.img_path, mode = args.mode)

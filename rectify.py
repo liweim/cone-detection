@@ -74,7 +74,6 @@ def rectify(img_path):
     basename = os.path.split(img_path)[1]
     dirname = os.path.split(img_path)[0]
     dirname = os.path.split(dirname)[0]
-    num = os.path.split(dirname)[1]
     img = cv2.imread(img_path)
     row, col = img.shape[:2]
     col = int(col/2)
@@ -116,8 +115,8 @@ def rectify(img_path):
     left_rect = cv2.remap(left, map1x, map1y, cv2.INTER_LINEAR)
     right_rect = cv2.remap(right, map2x, map2y, cv2.INTER_LINEAR)
 
-    left_save_path = join('ZED', num, 'left', basename)
-    right_save_path = join('ZED', num, 'right', basename)
+    left_save_path = join(dirname, 'left', basename)
+    right_save_path = join(dirname, 'right', basename)
     cv2.imwrite(left_save_path, left_rect)
     cv2.imwrite(right_save_path, right_rect)
 

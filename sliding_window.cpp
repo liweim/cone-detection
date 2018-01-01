@@ -86,16 +86,20 @@ void recognize(const std::string &dictionary, const std::string &src_filename) {
   std::ifstream ifs(dictionary.c_str());
   ifs >> nn;
 
-  cv::Mat img = cv::imread(src_filename);
-  cv::resize(img, img, cv::Size(32, 32));
-
   // convert imagefile to vec_t
   tiny_dnn::vec_t data;
   convert_image(src_filename, 0, 1.0, 32, 32, data);
 
   // recognize
   auto prob = nn.predict(data);
-  std::cout << "yellow: " << prob[1] << ", blue: " << prob[2] << std::endl;
+  float_t threshold = 0.7;
+  std::cout << prob[0] << " " << prob[1] << " " << prob[2] << std::endl;
+  if(prob[1]>prob[2] && prob[1]>threshold)
+    std::cout << "Yellow cone" << std::endl;
+  else if(prob[2]>prob[1] && prob[2]>threshold)
+    std::cout << "Blue cone" << std::endl;
+  else
+    std::cout << "No cone detected" << std::endl;
 
   // std::vector<pair<double, int>> scores;
   // // sort & print top-3
