@@ -67,7 +67,7 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
      << relu()                                            // activation
      << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
      << relu()                                            // activation
-     << fc(n_fc, 3, true, backend_type) << softmax(3);  // FC10
+     << fc(n_fc, 4, true, backend_type) << softmax(4);  // FC10
 
   //  for (int i = 0; i < nn.depth(); i++) {
   //       cout << "#layer:" << i << "\n";
@@ -92,14 +92,21 @@ void recognize(const std::string &dictionary, const std::string &src_filename) {
 
   // recognize
   auto prob = nn.predict(data);
-  float_t threshold = 0.7;
-  std::cout << prob[0] << " " << prob[1] << " " << prob[2] << std::endl;
-  if(prob[1]>prob[2] && prob[1]>threshold)
-    std::cout << "Yellow cone" << std::endl;
-  else if(prob[2]>prob[1] && prob[2]>threshold)
-    std::cout << "Blue cone" << std::endl;
-  else
+  float_t threshold = 0.5;
+  std::cout << prob[0] << " " << prob[1] << " " << prob[2] << " " << prob[3] << std::endl;
+  int max_index = 1;
+  float_t max_prob = prob[1];
+  for (int i=2; i<4; i++){
+    if (prob[i] > max_prob){
+      max_index = i;
+      max_prob = prob[i];
+    }
+  }
+  std::string labels[] = {"Yellow", "Blue", "Orange"};
+  if (max_prob < threshold)
     std::cout << "No cone detected" << std::endl;
+  else
+    std::cout << labels[max_index-1] << " cone detected" << std::endl;
 
   // std::vector<pair<double, int>> scores;
   // // sort & print top-3

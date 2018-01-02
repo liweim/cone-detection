@@ -41,16 +41,19 @@ def generate_data(model_ids, train_num, annotate_radius):
             if not resize_rate == 1:
                 img = imresize(img, resize_rate)
             mask = np.zeros(img.shape[:2]).astype(np.uint8)
-            if mode == -1:
-                mask += 100
+            xs = []
+            ys = []
             for point in points[1:]:
                 x = int(point[0] * resize_rate)
                 y = int(point[1] * resize_rate)
+                xs.append(x)
+                ys.append(y)
                 if mode == -1:
+                    cv2.circle(mask, (x, y), annotate_radius*3, 100, -1)
+            if mode == -1:
+                for x, y in zip(xs, ys):
                     cv2.circle(mask, (x, y), annotate_radius*2, 0, -1)
-            for point in points[1:]:
-                x = int(point[0] * resize_rate)
-                y = int(point[1] * resize_rate)
+            for x, y in zip(xs, ys):
                 if mode == 1:
                     cv2.circle(mask, (x, y), annotate_radius, 100, -1)
                 else:
@@ -60,9 +63,9 @@ def generate_data(model_ids, train_num, annotate_radius):
             mask[:, :radius] = 0
             mask[:, img.shape[1]-radius:] = 0
 
-            # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
-            # cv2.imshow('mask', mask)
-            # cv2.waitKey(0)
+            cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
+            cv2.imshow('mask', mask)
+            cv2.waitKey(0)
 
             imgs.append(img)
             masks.append(mask)

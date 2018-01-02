@@ -8,13 +8,11 @@ python3 merge_data.py --from_data 19 --to_data 11
 
 python select_region.py --cone_id 1 --img_path ZED/3/left/1.png
 
-python3 annotation.py --img_path tmp/999/30.png --data data/14
-
 python select_roi.py --cone_id 1 --img_path ZED/1/rectify/left/2.png
 
-python3 train_model_efficient.py --plant_id 16
+python3 generate_data.py  --nargs 1 2 3 --train_num 300 --annotate_radius 3
 
-python3 generate_data.py  --nargs yellow blue orange --train_num 200 --annotate_radius 3
+python cone_generate_data.py --path skippad1 --annotate_radius 3
 
 python3 train_model_segmantic.py  --cone_id 1 --train_num 100000
 
@@ -25,7 +23,7 @@ python3 test_plant_detect.py --img_path tmp/999/999.tif --model_id segmantic --p
 python3 csv2shp.py --i tmp/915/915.txt --o tmp/915/915.geojson --t tmp/915/915.tif
 
 #good:0, bad:1, good+bad:-1
-python annotate_region.py --mode -1 --img_path real-test/20171216/camera/skippad1/left/1513418735.872856.png --model_id yellow
+python annotate_region.py --mode -1 --img_path real-test/20171216/camera/skippad1/left/1513418735.872856.png --model_id 1
 
 python train_model_segmantic.py --train_num 100
 
@@ -41,11 +39,11 @@ python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/
 
 g++ train_sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_sliding_window
 
-./train_sliding_window --data_path data --epochs 30
+./train_sliding_window --data_path tmp/data --epochs 60
 
 g++ sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o sliding_window
 
-./sliding_window test.png
+./sliding_window tmp/data/0/0.png
 
 g++ efficient_sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o efficient_sliding_window
 

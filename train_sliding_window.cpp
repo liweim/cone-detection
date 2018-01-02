@@ -29,13 +29,13 @@ void convert_image(const string &imagefilename,
                    vec_t &data) {
 
   image<> img(imagefilename, tiny_dnn::image_type::rgb);
-  image<> resized = resize_image(img, w, h);
-  data.resize(resized.width() * resized.height() * resized.depth());
-  for (size_t c = 0; c < resized.depth(); ++c) {
-    for (size_t y = 0; y < resized.height(); ++y) {
-      for (size_t x = 0; x < resized.width(); ++x) {
-        data[c * resized.width() * resized.height() + y * resized.width() + x] =
-          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
+  img = resize_image(img, w, h);
+  data.resize(img.width() * img.height() * img.depth());
+  for (size_t c = 0; c < img.depth(); ++c) {
+    for (size_t y = 0; y < img.height(); ++y) {
+      for (size_t x = 0; x < img.width(); ++x) {
+        data[c * img.width() * img.height() + y * img.width() + x] =
+          (maxv - minv) * (img[y * img.width() + x + c]) / 255.0 + minv;
       }
     }
   }
@@ -103,7 +103,7 @@ void construct_net(N &nn, core::backend_t backend_type) {
      << relu()                                            // activation
      << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
      << relu()                                            // activation
-     << fc(n_fc, 3, true, backend_type) << softmax(3);  // FC10
+     << fc(n_fc, 4, true, backend_type) << softmax(4);  // FC10
 
    for (int i = 0; i < nn.depth(); i++) {
         cout << "#layer:" << i << "\n";
