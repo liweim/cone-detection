@@ -1,0 +1,12 @@
+591 245 yellow 
+387 186 yellow 
+349 180 yellow 
+329 172 yellow 
+333 213 blue 
+393 200 blue 
+517 183 blue 
+427 178 blue 
+87 194 orange 
+159 185 orange 
+262 196 orange 
+294 186 orange 

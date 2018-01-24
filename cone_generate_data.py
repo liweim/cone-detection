@@ -5,7 +5,7 @@ from os.path import join
 import cv2
 import argparse
 from random import random, choice
-from Utils import read_txt
+from Utils import read_txt, write_txt
 from scipy.misc import imresize
 from shutil import rmtree, copyfile
 import glob
@@ -34,26 +34,29 @@ def generate_data(path, annotate_radius):
     for xml_file in glob.glob(xml_path):
         tree = ET.parse(xml_file)
         root = tree.getroot()
-        img_path = join(img_folder_path, root.find('filename').text)
+        img_path = root.find('filename').text
+        filename = os.path.splitext(img_path)[0]
+        img_path = join(img_folder_path, img_path)
+
         img = cv2.imread(img_path)
         mask = np.zeros(img.shape[:2]).astype(np.uint8)
-        labels = []
-        xs = []
-        ys = []
+        cones = []
         for member in root.findall('object'):
-            labels.append(member[0].text)
+            label = member[0].text
             x1 = int(member[4][0].text)
             y1 = int(member[4][1].text)
             x2 = int(member[4][2].text)
             y2 = int(member[4][3].text)
             x = int((x1+x2)/2)
             y = int((y1+y2)/2)
-            xs.append(x)
-            ys.append(y)
-            cv2.circle(mask, (x, y), annotate_radius*5, 100, -1)
-        for x, y in zip(xs, ys):
-            cv2.circle(mask, (x, y), annotate_radius*2, 0, -1)
-        for x, y in zip(xs, ys):
+            cones.append([x, y, label])
+            cv2.circle(mask, (x, y), 16, 100, -1)
+        txt_path = join('annotations', path, filename+'.txt')
+        write_txt(txt_path, cones)
+
+        for x, y, label in cones:
+            cv2.circle(mask, (x, y), 8, 0, -1)
+        for x, y, label in cones:
             cv2.circle(mask, (x, y), annotate_radius, 255, -1)
         mask[:radius, :] = 0
         mask[img.shape[0]-radius:, :] = 0
@@ -65,7 +68,7 @@ def generate_data(path, annotate_radius):
         # cv2.waitKey(0)
 
         count = 0
-        for label, x, y in zip(labels, xs, ys):
+        for x, y, label in cones:
             if label == 'yellow':
                 save_folder_path = yellow_path
             if label == 'blue':

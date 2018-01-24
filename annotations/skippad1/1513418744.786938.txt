@@ -1,0 +1,6 @@
+156 278 yellow 
+487 206 yellow 
+399 191 yellow 
+205 204 blue 
+297 187 blue 
+589 289 blue 

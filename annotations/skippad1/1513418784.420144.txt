@@ -1,0 +1,10 @@
+620 259 yellow 
+102 221 yellow 
+38 206 yellow 
+39 183 yellow 
+25 307 blue 
+149 182 blue 
+208 193 blue 
+338 198 blue 
+509 195 blue 
+552 182 blue 

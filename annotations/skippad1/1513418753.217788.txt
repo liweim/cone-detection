@@ -1,0 +1,11 @@
+615 316 yellow 
+582 215 yellow 
+151 215 yellow 
+73 204 yellow 
+347 211 blue 
+416 199 blue 
+579 190 blue 
+184 201 orange 
+205 192 orange 
+320 191 orange 
+330 198 orange 

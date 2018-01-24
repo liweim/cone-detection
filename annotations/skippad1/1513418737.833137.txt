@@ -1,0 +1,10 @@
+297 268 orange 
+433 208 orange 
+171 186 yellow 
+370 194 yellow 
+467 195 yellow 
+242 180 blue 
+452 183 blue 
+617 203 blue 
+500 180 blue 
+583 183 yellow 

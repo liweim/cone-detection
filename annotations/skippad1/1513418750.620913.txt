@@ -1,0 +1,16 @@
+594 306 yellow 
+487 216 yellow 
+547 193 yellow 
+280 189 yellow 
+227 184 yellow 
+94 181 yellow 
+90 297 blue 
+22 186 blue 
+160 196 blue 
+393 190 blue 
+443 185 blue 
+586 181 blue 
+288 184 orange 
+295 179 orange 
+375 180 orange 
+383 185 orange 

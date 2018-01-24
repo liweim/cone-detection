@@ -1,0 +1,10 @@
+611 316 yellow 
+564 221 yellow 
+150 265 blue 
+420 205 blue 
+625 197 blue 
+568 198 blue 
+534 191 orange 
+442 188 orange 
+471 187 orange 
+561 189 orange 

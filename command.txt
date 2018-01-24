@@ -12,7 +12,7 @@ python select_roi.py --cone_id 1 --img_path ZED/1/rectify/left/2.png
 
 python3 generate_data.py  --nargs 1 2 3 --train_num 300 --annotate_radius 3
 
-python cone_generate_data.py --path skippad1 --annotate_radius 3
+python cone_generate_data.py --path skippad1 --annotate_radius 1
 
 python3 train_model_segmantic.py  --cone_id 1 --train_num 100000
 
@@ -39,7 +39,7 @@ python3 cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/
 
 g++ train_sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_sliding_window
 
-./train_sliding_window --data_path tmp/data --epochs 60
+./train_sliding_window --data_path tmp/data --epochs 50
 
 g++ sliding_window.cpp -I /home/weiming/project/cpp/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o sliding_window
 

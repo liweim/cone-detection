@@ -1,0 +1,12 @@
+520 247 yellow 
+560 204 yellow 
+226 199 yellow 
+162 192 yellow 
+39 213 blue 
+372 199 blue 
+429 191 blue 
+582 188 blue 
+243 191 orange 
+254 184 orange 
+349 186 orange 
+358 191 orange 

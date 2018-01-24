@@ -1,0 +1,7 @@
+571 275 yellow 
+611 215 yellow 
+236 242 blue 
+454 201 blue 
+626 192 blue 
+18 255 orange 
+47 222 orange 

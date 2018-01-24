@@ -1,0 +1,8 @@
+552 220 yellow 
+266 230 blue 
+355 205 blue 
+520 187 blue 
+32 220 orange 
+82 203 orange 
+239 197 orange 
+249 208 orange 

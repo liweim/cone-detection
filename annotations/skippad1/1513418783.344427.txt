@@ -1,0 +1,12 @@
+607 234 yellow 
+238 206 yellow 
+187 197 yellow 
+169 184 yellow 
+31 323 blue 
+238 238 blue 
+297 191 blue 
+246 182 blue 
+403 195 blue 
+560 194 blue 
+619 185 blue 
+77 210 orange 

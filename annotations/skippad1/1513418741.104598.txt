@@ -1,0 +1,10 @@
+233 230 orange 
+510 242 orange 
+610 218 blue 
+455 205 blue 
+161 184 blue 
+276 181 blue 
+144 202 yellow 
+290 198 yellow 
+609 199 yellow 
+455 188 yellow 

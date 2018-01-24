@@ -1,0 +1,16 @@
+602 245 yellow 
+413 201 yellow 
+415 188 yellow 
+469 180 yellow 
+552 178 yellow 
+18 173 yellow 
+165 173 yellow 
+263 175 yellow 
+300 177 yellow 
+60 248 blue 
+267 199 blue 
+234 180 blue 
+133 176 blue 
+373 179 blue 
+409 177 blue 
+514 175 blue 
