@@ -1,4 +1,4 @@
-import skimage.io
+import skimage
 import numpy as np
 import cv2
 
