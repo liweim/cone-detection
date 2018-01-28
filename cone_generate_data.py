@@ -10,6 +10,7 @@ from shutil import rmtree, copyfile
 import glob
 import xml.etree.ElementTree as ET
 import pandas as pd
+import random
 
 PATCH_SIZE = 32
 radius = int((PATCH_SIZE-1)/2)
@@ -38,6 +39,7 @@ def generate_data(path):
         img_path = basename+'.png'
 
         img = cv2.imread(img_path)
+        row, col = img.shape[:2]
         mask = np.zeros(img.shape[:2]).astype(np.uint8)
         cones = []
         for member in root.findall('object'):
@@ -65,45 +67,38 @@ def generate_data(path):
         # mask[:, :radius] = 0
         # mask[:, img.shape[1]-radius:] = 0
 
-        cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
-        cv2.imshow('mask', mask)
-        cv2.waitKey(0)
+        # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
+        # cv2.imshow('mask', mask)
+        # cv2.waitKey(0)
 
-    #     count = 0
-    #     for x, y, length, label in cones:
-    #         if label == 'yellow':
-    #             save_folder_path = yellow_path
-    #         if label == 'blue':
-    #             save_folder_path = blue_path
-    #         if label == 'orange':
-    #             save_folder_path = orange_path
-    #         for c in range(x-annotate_radius, x+annotate_radius):
-    #             for r in range(y-annotate_radius, y+annotate_radius):
-    #                 if mask[r,c] == 255:
-    #                     count += 1
-    #                     image = img[r-radius:r+radius+1, c-radius:c+radius+1]
-    #                     image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
-    #                     num = len(os.listdir(save_folder_path))
-    #                     cv2.imwrite(join(save_folder_path, str(num)+'.png'), image)
-    #
-    #     flag = np.zeros(mask.shape)
-    #     for c in range(count):
-    #         rs, cs = mask.shape
-    #         r = choice(range(radius, rs-radius))
-    #         c = choice(range(radius, cs-radius))
-    #         while not (mask[r, c] == 100 and flag[r, c] < 1):
-    #             r = choice(range(radius, rs-radius))
-    #             c = choice(range(radius, cs-radius))
-    #         image = img[r-radius:r+radius+1, c-radius:c+radius+1, :]
-    #         image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
-    #         cv2.imwrite(join(data_path, '0', str(count0)+'.png'), image)
-    #         count0 += 1
-    #         flag[r, c] = 1
-    #
-    # print('Background: {}'.format(len(os.listdir(background_path))))
-    # print('Yellow: {}'.format(len(os.listdir(yellow_path))))
-    # print('Blue: {}'.format(len(os.listdir(blue_path))))
-    # print('Orange: {}'.format(len(os.listdir(orange_path))))
+        pickup_rate = np.sum(mask==255)/np.sum(mask==100)
+        for x, y, ratio, label in cones:
+            if label == 'yellow':
+                save_folder_path = yellow_path
+            if label == 'blue':
+                save_folder_path = blue_path
+            if label == 'orange':
+                save_folder_path = orange_path
+            patch_radius = int(radius * ratio)
+            roi_radius = int(16*ratio)
+            for c in range(max(x-roi_radius,patch_radius), min(x+roi_radius,col-patch_radius)):
+                for r in range(max(y-roi_radius,patch_radius), min(y+roi_radius,row-patch_radius)):
+                    if mask[r,c] == 100:
+                        if random.random() < pickup_rate:
+                            image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
+                            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+                            num = len(os.listdir(background_path))
+                            cv2.imwrite(join(background_path, str(num)+'.png'), image)
+                    if mask[r,c] == 255:
+                        image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
+                        image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+                        num = len(os.listdir(save_folder_path))
+                        cv2.imwrite(join(save_folder_path, str(num)+'.png'), image)
+
+    print('Background: {}'.format(len(os.listdir(background_path))))
+    print('Yellow: {}'.format(len(os.listdir(yellow_path))))
+    print('Blue: {}'.format(len(os.listdir(blue_path))))
+    print('Orange: {}'.format(len(os.listdir(orange_path))))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
