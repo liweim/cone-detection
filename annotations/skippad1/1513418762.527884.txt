@@ -1,5 +1,0 @@
-611 308 yellow 
-590 220 yellow 
-176 259 blue 
-411 199 blue 
-558 191 blue 

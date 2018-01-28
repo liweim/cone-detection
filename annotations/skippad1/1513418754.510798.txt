@@ -1,8 +1,0 @@
-545 224 yellow 
-632 196 yellow 
-22 212 orange 
-214 214 orange 
-207 202 orange 
-227 243 blue 
-333 209 blue 
-503 188 blue 

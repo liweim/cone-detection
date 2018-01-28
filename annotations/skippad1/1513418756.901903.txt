@@ -1,4 +1,0 @@
-607 221 yellow 
-78 301 blue 
-420 203 blue 
-591 191 blue 

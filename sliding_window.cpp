@@ -21,25 +21,44 @@ double rescale(double x) {
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-void convert_image(const std::string &src_filename,
-                   double minv,
-                   double maxv,
+// convert image to vec_t
+void convert_image(cv::Mat img,
+                   double scale,
                    int w,
                    int h,
-                   tiny_dnn::vec_t &data) {
+                   tiny_dnn::vec_t& data)
+{
+    cv::Mat hsv, channel[3];
+    cv::cvtColor(img, hsv, CV_RGB2HSV);
+    cv::split(hsv, channel);
+    if (img.data == nullptr) return; // cannot open, or it's not an image
 
-  tiny_dnn::image<> img(src_filename, tiny_dnn::image_type::rgb);
-  tiny_dnn::image<> resized = tiny_dnn::resize_image(img, w, h);
-  data.resize(resized.width() * resized.height() * resized.depth());
-  for (size_t c = 0; c < resized.depth(); ++c) {
-    for (size_t y = 0; y < resized.height(); ++y) {
-      for (size_t x = 0; x < resized.width(); ++x) {
-        data[c * resized.width() * resized.height() + y * resized.width() + x] =
-          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
-      }
-    }
-  }
+    cv::Mat_<uint8_t> resized;
+    cv::resize(channel[0], resized, cv::Size(w, h));
+
+    std::transform(resized.begin(), resized.end(), std::back_inserter(data),
+                   [=](uint8_t c) { return c * scale; });
 }
+
+// void convert_image(const std::string &src_filename,
+//                    double minv,
+//                    double maxv,
+//                    int w,
+//                    int h,
+//                    tiny_dnn::vec_t &data) {
+//
+//   tiny_dnn::image<> img(src_filename, tiny_dnn::image_type::rgb);
+//   tiny_dnn::image<> resized = tiny_dnn::resize_image(img, w, h);
+//   data.resize(resized.width() * resized.height() * resized.depth());
+//   for (size_t c = 0; c < resized.depth(); ++c) {
+//     for (size_t y = 0; y < resized.height(); ++y) {
+//       for (size_t x = 0; x < resized.width(); ++x) {
+//         data[c * resized.width() * resized.height() + y * resized.width() + x] =
+//           (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
+//       }
+//     }
+//   }
+// }
 
 template <typename N>
 void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
@@ -77,18 +96,47 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   //   }
 }
 
-void recognize(const std::string &dictionary, const std::string &src_filename) {
+class Cone {
+  public:
+    int x, y;
+    float ratio;
+    std::string label;
+    std::string detected_label;
+
+    Cone(int, int, float, const std::string&);
+};
+
+Cone::Cone(int m_x, int m_y, float m_ratio, const std::string &m_label) {
+  x = m_x;
+  y = m_y;
+  ratio = m_ratio;
+  label = m_label;
+}
+
+void recognize(const std::string &model_path, const std::string &img_path) {
   tiny_dnn::network<tiny_dnn::sequential> nn;
 
   construct_net(nn, tiny_dnn::core::default_engine());
 
   // load nets
-  std::ifstream ifs(dictionary.c_str());
+  std::ifstream ifs(model_path.c_str());
   ifs >> nn;
 
   // convert imagefile to vec_t
   tiny_dnn::vec_t data;
-  convert_image(src_filename, 0, 1.0, 32, 32, data);
+  auto img = cv::imread(img_path);
+  convert_image(img, 0, 1.0, 32, 32, data);
+
+  // manual roi
+  // (585, 211,	0.625,	"orange");
+  // (343, 185,	0.25,	"yellow");
+  // (521, 198,	0.375,	"yellow");
+  // (634,	202,	0.375,	"yellow");
+  // (625,	191,	0.34375,	"blue");
+  // (396,	183,	0.34375,	"blue");
+
+  Cone m_cone(453, 237, 0.96875, "orange");
+  std::cout << "x: " << m_cone.x << ", y: " << m_cone.y << ", ratio: " << m_cone.ratio << ", label: " << m_cone.label <<std::endl;
 
   // recognize
   auto prob = nn.predict(data);
