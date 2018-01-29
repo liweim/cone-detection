@@ -21,33 +21,31 @@ double rescale(double x) {
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-// convert image to vec_t
 void convert_image(cv::Mat img,
-                   double scale,
                    int w,
                    int h,
-                   tiny_dnn::vec_t& data)
-{
-    cv::Mat hsv, channel[3];
-    cv::cvtColor(img, hsv, CV_RGB2HSV);
-    cv::split(hsv, channel);
-    if (img.data == nullptr) return; // cannot open, or it's not an image
+                   tiny_dnn::vec_t& data){
 
-    cv::Mat_<uint8_t> resized;
-    cv::resize(channel[0], resized, cv::Size(w, h));
-
-    std::transform(resized.begin(), resized.end(), std::back_inserter(data),
-                   [=](uint8_t c) { return c * scale; });
+  cv::Mat resized;
+  cv::resize(img, resized, cv::Size(w, h));
+  data.resize(w * h * 3);
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t y = 0; y < h; ++y) {
+      for (size_t x = 0; x < w; ++x) {
+        data[c * w * h + y * w + x] =
+          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
+      }
+    }
+  }
 }
 
-// void convert_image(const std::string &src_filename,
+// void convert_image(tiny_dnn::image<> img,
 //                    double minv,
 //                    double maxv,
 //                    int w,
 //                    int h,
 //                    tiny_dnn::vec_t &data) {
 //
-//   tiny_dnn::image<> img(src_filename, tiny_dnn::image_type::rgb);
 //   tiny_dnn::image<> resized = tiny_dnn::resize_image(img, w, h);
 //   data.resize(resized.width() * resized.height() * resized.depth());
 //   for (size_t c = 0; c < resized.depth(); ++c) {
@@ -59,6 +57,7 @@ void convert_image(cv::Mat img,
 //     }
 //   }
 // }
+
 int PATCH_SIZE = 32;
 template <typename N>
 void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
@@ -72,7 +71,7 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
   const size_t n_fc     = 64;  // number of hidden units in fc layer
 
-  nn << conv(PATCH_SIZE, PATCH_SIZE, 5, 1, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
+  nn << conv(PATCH_SIZE, PATCH_SIZE, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
              backend_type)                      // C1
      << pool(32, 32, n_fmaps, 2, backend_type)  // P2
      << relu()                                  // activation
@@ -87,42 +86,6 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
      << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
      << relu()                                            // activation
      << fc(n_fc, 4, true, backend_type) << softmax(4);  // FC10
-
-  //  for (int i = 0; i < nn.depth(); i++) {
-  //       cout << "#layer:" << i << "\n";
-  //       cout << "layer type:" << nn[i]->layer_type() << "\n";
-  //       cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
-  //       cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
-  //   }
-}
-
-class Cone {
-  public:
-    int x, y;
-    float ratio;
-    std::string label;
-    std::string detected_label;
-    tiny_dnn::vec_t data;
-
-    Cone(cv::Mat, int, int, float, const std::string&);
-};
-
-Cone::Cone(cv::Mat img, int m_x, int m_y, float m_ratio, const std::string &m_label) {
-  x = m_x;
-  y = m_y;
-  ratio = m_ratio;
-  label = m_label;
-
-  cv::Rect roi;
-  int length = ratio * PATCH_SIZE;
-  int radius = (length-1)/2;
-  roi.x = x - radius;
-  roi.y = y - radius;
-  roi.width = length;
-  roi.height = length;
-
-  auto patch_img = img(roi);
-  convert_image(patch_img, 1/255, PATCH_SIZE, PATCH_SIZE, data);
 }
 
 void recognize(const std::string &model_path, const std::string &img_path) {
@@ -135,10 +98,10 @@ void recognize(const std::string &model_path, const std::string &img_path) {
   ifs >> nn;
 
   // convert imagefile to vec_t
-  cv::Mat img = cv::imread(img_path);
-  rectify(img);
+  // tiny_dnn::image<> img(img_path, tiny_dnn::image_type::bgr);
 
   // manual roi
+  // (453, 237, 0.96875, "orange")
   // (585, 211,	0.625,	"orange");
   // (343, 185,	0.25,	"yellow");
   // (521, 198,	0.375,	"yellow");
@@ -146,10 +109,26 @@ void recognize(const std::string &model_path, const std::string &img_path) {
   // (625,	191,	0.34375,	"blue");
   // (396,	183,	0.34375,	"blue");
 
-  Cone m_cone(img, 453, 237, 0.96875, "orange");
+  int cx = 453;
+  int cy = 237;
+  double ratio = 0.96875;
+  std::string label = "orange";
+
+  int length = ratio * PATCH_SIZE;
+  int radius = (length-1)/2;
+  cv::Rect roi;
+  roi.x = cx - radius;
+  roi.y = cy - radius;
+  roi.width = length;
+  roi.height = length;
+  auto img = cv::imread(img_path);
+  auto patch_img = img(roi);
+
+  tiny_dnn::vec_t data;
+  convert_image(patch_img, PATCH_SIZE, PATCH_SIZE, data);
 
   // recognize
-  auto prob = nn.predict(m_cone.data);
+  auto prob = nn.predict(data);
   float_t threshold = 0.5;
   std::cout << prob[0] << " " << prob[1] << " " << prob[2] << " " << prob[3] << std::endl;
   int max_index = 1;

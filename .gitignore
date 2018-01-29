@@ -14,3 +14,4 @@ data_cifar10
 data_mnist
 real-test
 tmp
+command2.txt

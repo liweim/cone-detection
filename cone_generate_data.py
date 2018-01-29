@@ -61,7 +61,7 @@ def generate_data(path):
         for x, y, ratio, label in cones:
             cv2.circle(mask, (x, y), int(8*ratio), 0, -1)
         for x, y, ratio, label in cones:
-            cv2.circle(mask, (x, y), int(4*ratio), 255, -1)
+            cv2.circle(mask, (x, y), int(1*ratio), 255, -1)
         # mask[:radius, :] = 0
         # mask[img.shape[0]-radius:, :] = 0
         # mask[:, :radius] = 0
@@ -71,7 +71,7 @@ def generate_data(path):
         # cv2.imshow('mask', mask)
         # cv2.waitKey(0)
 
-        pickup_rate = np.sum(mask==255)/np.sum(mask==100)
+        pickup_rate = np.sum(mask==255)/np.sum(mask==100)/3
         for x, y, ratio, label in cones:
             if label == 'yellow':
                 save_folder_path = yellow_path
