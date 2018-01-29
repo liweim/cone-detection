@@ -18,6 +18,7 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
+int PATCH_SIZE = 32;
 // convert image to vec_t
 void convert_image(const std::string& imagefilename,
                    double scale,
@@ -141,7 +142,7 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
   const size_t n_fc     = 64;  // number of hidden units in fc layer
 
-  nn << conv(32, 32, 5, 1, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
+  nn << conv(PATCH_SIZE, PATCH_SIZE, 5, 1, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
              backend_type)                      // C1
      << pool(32, 32, n_fmaps, 2, backend_type)  // P2
      << relu()                                  // activation
@@ -180,7 +181,7 @@ void train_network(std::string data_dir_path,
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
 
-  load_data(data_dir_path, 1/255, 32, 32, train_images, train_labels, test_images, test_labels);
+  load_data(data_dir_path, 1/255, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, test_images, test_labels);
 
   std::cout << "start learning" << std::endl;
 

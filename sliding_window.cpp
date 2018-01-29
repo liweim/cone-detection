@@ -59,7 +59,7 @@ void convert_image(cv::Mat img,
 //     }
 //   }
 // }
-
+int PATCH_SIZE = 32;
 template <typename N>
 void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using conv    = tiny_dnn::convolutional_layer;
@@ -72,7 +72,7 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
   const size_t n_fc     = 64;  // number of hidden units in fc layer
 
-  nn << conv(32, 32, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
+  nn << conv(PATCH_SIZE, PATCH_SIZE, 5, 1, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
              backend_type)                      // C1
      << pool(32, 32, n_fmaps, 2, backend_type)  // P2
      << relu()                                  // activation
@@ -102,15 +102,27 @@ class Cone {
     float ratio;
     std::string label;
     std::string detected_label;
+    tiny_dnn::vec_t data;
 
-    Cone(int, int, float, const std::string&);
+    Cone(cv::Mat, int, int, float, const std::string&);
 };
 
-Cone::Cone(int m_x, int m_y, float m_ratio, const std::string &m_label) {
+Cone::Cone(cv::Mat img, int m_x, int m_y, float m_ratio, const std::string &m_label) {
   x = m_x;
   y = m_y;
   ratio = m_ratio;
   label = m_label;
+
+  cv::Rect roi;
+  int length = ratio * PATCH_SIZE;
+  int radius = (length-1)/2;
+  roi.x = x - radius;
+  roi.y = y - radius;
+  roi.width = length;
+  roi.height = length;
+
+  auto patch_img = img(roi);
+  convert_image(patch_img, 1/255, PATCH_SIZE, PATCH_SIZE, data);
 }
 
 void recognize(const std::string &model_path, const std::string &img_path) {
@@ -123,9 +135,8 @@ void recognize(const std::string &model_path, const std::string &img_path) {
   ifs >> nn;
 
   // convert imagefile to vec_t
-  tiny_dnn::vec_t data;
-  auto img = cv::imread(img_path);
-  convert_image(img, 0, 1.0, 32, 32, data);
+  cv::Mat img = cv::imread(img_path);
+  rectify(img);
 
   // manual roi
   // (585, 211,	0.625,	"orange");
@@ -135,11 +146,10 @@ void recognize(const std::string &model_path, const std::string &img_path) {
   // (625,	191,	0.34375,	"blue");
   // (396,	183,	0.34375,	"blue");
 
-  Cone m_cone(453, 237, 0.96875, "orange");
-  std::cout << "x: " << m_cone.x << ", y: " << m_cone.y << ", ratio: " << m_cone.ratio << ", label: " << m_cone.label <<std::endl;
+  Cone m_cone(img, 453, 237, 0.96875, "orange");
 
   // recognize
-  auto prob = nn.predict(data);
+  auto prob = nn.predict(m_cone.data);
   float_t threshold = 0.5;
   std::cout << prob[0] << " " << prob[1] << " " << prob[2] << " " << prob[3] << std::endl;
   int max_index = 1;
