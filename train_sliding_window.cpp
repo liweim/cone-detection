@@ -44,11 +44,14 @@ void load_data(const std::string& directory,
                     int h,
                     std::vector<tiny_dnn::vec_t>& train_imgs,
                     std::vector<tiny_dnn::label_t>& train_labels,
+                    std::vector<tiny_dnn::vec_t> train_values,
                     std::vector<tiny_dnn::vec_t>& test_imgs,
-                    std::vector<tiny_dnn::label_t>& test_labels)
+                    std::vector<tiny_dnn::label_t>& test_labels,
+                    std::vector<tiny_dnn::vec_t> test_values)
 {
     boost::filesystem::path dpath(directory);
     int label_id;
+
     tiny_dnn::vec_t data;
     double random;
 
@@ -56,6 +59,9 @@ void load_data(const std::string& directory,
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& img_path, std::make_pair(boost::filesystem::directory_iterator(label_path), boost::filesystem::directory_iterator())) {
           label_id = stoi(label_path.filename().string());
+          tiny_dnn::vec_t target_value = {0,0,0,0};
+          target_value[label_id] = 1;
+
           auto img = cv::imread(img_path.string());
           convert_image(img, w, h, data);
 
@@ -63,10 +69,12 @@ void load_data(const std::string& directory,
           if (random < 0.7){
             train_labels.push_back(label_id);
             train_imgs.push_back(data);
+            train_values.push_back(target_value);
           }
           else{
             test_labels.push_back(label_id);
             test_imgs.push_back(data);
+            test_values.push_back(target_value);
           }
 
       }
@@ -124,18 +132,19 @@ void train_network(std::string data_dir_path,
 
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
+  std::vector<tiny_dnn::vec_t> train_values, test_values;
 
-  load_data(data_dir_path, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, test_images, test_labels);
+  load_data(data_dir_path, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, train_values, test_images, test_labels, test_values);
 
   std::cout << "start learning" << std::endl;
 
   tiny_dnn::progress_display disp(train_images.size());
   tiny_dnn::timer t;
 
-  optimizer.alpha *=
-    static_cast<float_t>(sqrt(n_minibatch) * learning_rate);
+  optimizer.alpha *= static_cast<float_t>(sqrt(n_minibatch) * learning_rate);
 
   int epoch = 1;
+  int num_success = 0;
   // create callback
   auto on_enumerate_epoch = [&]() {
     std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
@@ -143,6 +152,15 @@ void train_network(std::string data_dir_path,
     ++epoch;
     tiny_dnn::result res = nn.test(test_images, test_labels);
     log << res.num_success << "/" << res.num_total << std::endl;
+
+    // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy>(train_images, train_values);
+    // float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy>(test_images, test_values);
+    // std::cout << "Training loss: " << loss_train << ", " << "validation loss: " << loss_val << std::endl;
+    if(num_success < res.num_success){
+      num_success = res.num_success;
+      std::ofstream ofs ("models/sliding_window");
+      ofs << nn;
+    }
 
     disp.restart(train_images.size());
     t.restart();
@@ -159,9 +177,6 @@ void train_network(std::string data_dir_path,
 
   // test and show results
   nn.test(test_images, test_labels).print_detail(std::cout);
-  // save networks
-  std::ofstream ofs("models/sliding_window");
-  ofs << nn;
 }
 
 static tiny_dnn::core::backend_t parse_backend_name(const std::string &name) {
