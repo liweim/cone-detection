@@ -58,12 +58,12 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type, int width, int
      << conv(width-20, height-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(width-22, height-22, 3, 32, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type);
 
-  for (int i = 0; i < nn.depth(); i++) {
-    std::cout << "#layer:" << i << "\n";
-    std::cout << "layer type:" << nn[i]->layer_type() << "\n";
-    std::cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
-    std::cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
-  }
+  // for (int i = 0; i < nn.depth(); i++) {
+  //   std::cout << "#layer:" << i << "\n";
+  //   std::cout << "layer type:" << nn[i]->layer_type() << "\n";
+  //   std::cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
+  //   std::cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
+  // }
 }
 
 void softmax(cv::Vec4f x, cv::Vec4f &y) {
@@ -82,7 +82,7 @@ void softmax(cv::Vec4f x, cv::Vec4f &y) {
 std::vector <cv::Point> imregionalmax(cv::Mat input, int nLocMax, double threshold, int minDistBtwLocMax)
 {
     cv::Mat scratch = input.clone();
-    std::cout<<scratch<<std::endl;
+    // std::cout<<scratch<<std::endl;
     // cv::GaussianBlur(scratch, scratch, cv::Size(3,3), 0, 0);
     std::vector <cv::Point> locations(0);
     locations.reserve(nLocMax); // Reserve place for fast access
@@ -93,7 +93,7 @@ std::vector <cv::Point> imregionalmax(cv::Mat input, int nLocMax, double thresho
         if (maxVal > threshold) {
             int row = location.y;
             int col = location.x;
-            locations.push_back(cv::Point(row, col));
+            locations.push_back(cv::Point(col, row));
             int r0 = (row-minDistBtwLocMax > -1 ? row-minDistBtwLocMax : 0);
             int r1 = (row+minDistBtwLocMax < scratch.rows ? row+minDistBtwLocMax : scratch.rows-1);
             int c0 = (col-minDistBtwLocMax > -1 ? col-minDistBtwLocMax : 0);
@@ -110,23 +110,21 @@ std::vector <cv::Point> imregionalmax(cv::Mat input, int nLocMax, double thresho
         }
     }
 
-    std::cout<<locations<<std::endl;
+    // std::cout<<locations<<std::endl;
     return locations;
 }
 
 void recognize(const std::string &dictionary, const std::string &img_path, double threshold) {
-  int width = 100;
-  int height = 100;
-  int radius_width = (width-1)/2;
-  int radius_height = (height-1)/2;
   int patch_size = 25;
   int patch_radius = (patch_size-1)/2;
-  int output_width  = width - (patch_size - 1);
-  int output_height  = height - (patch_size - 1);
+  double factor = 2;
+  int input_size = patch_size * factor;
+  int input_radius = (input_size-1)/2;
+  int output_size  = input_size - (patch_size - 1);
 
   tiny_dnn::network<tiny_dnn::sequential> nn;
 
-  construct_net(nn, tiny_dnn::core::default_engine(), width, height);
+  construct_net(nn, tiny_dnn::core::default_engine(), input_size, input_size);
 
   // load nets
   std::ifstream ifs(dictionary.c_str());
@@ -144,21 +142,20 @@ void recognize(const std::string &dictionary, const std::string &img_path, doubl
   // (625,	191,	0.34375,	"blue");
   // (396,	183,	0.34375,	"blue");
 
-  int cx = 520;
-  int cy = 210;
-  double ratio = 2;
-  std::string label = "orange";
+  int cx = 396;
+  int cy = 183;
+  double ratio = 0.34375;
 
-  int length = ratio * patch_size;
-  int radius = (length-1)/2;
+  int roi_size = factor * ratio * patch_size;
+  int roi_radius = (roi_size-1)/2;
   cv::Rect roi;
-  roi.x = cx - radius;
-  roi.y = cy - radius;
-  roi.width = length;
-  roi.height = length;
+  roi.x = std::max(cx - roi_radius, 0);
+  roi.y = std::max(cy - roi_radius, 0);
+  roi.width = std::min(cx + roi_radius, 640) - roi.x;
+  roi.height = std::min(cy + roi_radius, 360) - roi.y;
   auto img = cv::imread(img_path);
   auto patch_img = img(roi);
-  cv::resize(patch_img, patch_img, cv::Size(width, height));
+  cv::resize(patch_img, patch_img, cv::Size(input_size, input_size));
 
   cv::namedWindow("img", cv::WINDOW_NORMAL);
   cv::imshow("img", patch_img);
@@ -167,21 +164,21 @@ void recognize(const std::string &dictionary, const std::string &img_path, doubl
 
   // convert imagefile to vec_t
   tiny_dnn::vec_t data;
-  convert_image(patch_img, width, height, data);
+  convert_image(patch_img, input_size, input_size, data);
 
   // recognize
   auto prob = nn.predict(data);
 
-  cv::Mat prob_map = cv::Mat::zeros(output_width, output_height, CV_32FC4);
+  cv::Mat prob_map = cv::Mat::zeros(output_size, output_size, CV_32FC4);
   for (size_t c = 0; c < 4; ++c)
-    for (size_t y = 0; y < output_height; ++y)
-      for (size_t x = 0; x < output_width; ++x)
-         prob_map.at<cv::Vec4f>(y, x)[c] = prob[c * output_width * output_height + y * output_width + x];
+    for (size_t y = 0; y < output_size; ++y)
+      for (size_t x = 0; x < output_size; ++x)
+         prob_map.at<cv::Vec4f>(y, x)[c] = prob[c * output_size * output_size + y * output_size + x];
 
   cv::Vec4f prob_softmax(4);
-  cv::Mat prob_map_softmax = cv::Mat::zeros(output_width, output_height, CV_32FC3);
-  for (size_t y = 0; y < output_height; ++y)
-    for (size_t x = 0; x < output_width; ++x){
+  cv::Mat prob_map_softmax = cv::Mat::zeros(output_size, output_size, CV_32FC3);
+  for (size_t y = 0; y < output_size; ++y)
+    for (size_t x = 0; x < output_size; ++x){
       softmax(prob_map.at<cv::Vec4f>(y, x), prob_softmax);
       for (size_t c = 0; c < 3; ++c)
         if(prob_softmax[c+1] > threshold)
@@ -197,37 +194,37 @@ void recognize(const std::string &dictionary, const std::string &img_path, doubl
     cv::destroyAllWindows();
   }
 
-  // std::vector <cv::Point> yellow, blue, orange;
-  //
-  // int nLocMax = 1;
-  // int minDistBtwLocMax = 10;
-  // yellow = imregionalmax(prob_map[0], nLocMax, threshold, minDistBtwLocMax);
-  // blue = imregionalmax(prob_map[1], nLocMax, threshold, minDistBtwLocMax);
-  // orange = imregionalmax(prob_map[2], nLocMax, threshold, minDistBtwLocMax);
-  //
-  // cv::Point cone;
-  //
-  // if (yellow.size()>0){
-  //   for(int i=0; i<yellow.size(); i++){
-  //     cone = yellow[i] + cv::Point(radius_width, radius_height);
-  //     cv::circle(img, cone, 1, {0, 255, 255}, 1);
-  //   }
-  // }
-  // if (blue.size()>0){
-  //   for(int i=0; i<blue.size(); i++){
-  //     cone = blue[i] + cv::Point(patch_radius, patch_radius);
-  //     cv::circle(img, cone, 1, {255, 0, 0}, 1);
-  //   }
-  // }
-  // if (orange.size()>0){
-  //   for(int i=0; i<orange.size(); i++){
-  //     cone = orange[i] + cv::Point(radius_width, radius_height);
-  //     cv::circle(img, cone, 1, {0, 165, 255}, 1);
-  //   }
-  // }
-  // cv::namedWindow("img", cv::WINDOW_NORMAL);
-  // cv::imshow("img", img);
-  // cv::waitKey(0);
+  std::vector <cv::Point> yellow, blue, orange;
+
+  int nLocMax = 1;
+  int minDistBtwLocMax = 10;
+  yellow = imregionalmax(prob_map_split[0], nLocMax, threshold, minDistBtwLocMax);
+  blue = imregionalmax(prob_map_split[1], nLocMax, threshold, minDistBtwLocMax);
+  orange = imregionalmax(prob_map_split[2], nLocMax, threshold, minDistBtwLocMax);
+
+  cv::Point position, positionShift = cv::Point(patch_radius*ratio + cx - roi_radius, patch_radius*ratio + cy - roi_radius);
+
+  if (yellow.size()>0){
+    for(int i=0; i<yellow.size(); i++){
+      position = yellow[i]*ratio + positionShift;
+      cv::circle(img, position, 1, {0, 255, 255}, -1);
+    }
+  }
+  if (blue.size()>0){
+    for(int i=0; i<blue.size(); i++){
+      position = blue[i]*ratio + positionShift;
+      cv::circle(img, position, 1, {255, 0, 0}, -1);
+    }
+  }
+  if (orange.size()>0){
+    for(int i=0; i<orange.size(); i++){
+      position = orange[i]*ratio + positionShift;
+      cv::circle(img, position, 1, {0, 165, 255}, -1);
+    }
+  }
+  cv::namedWindow("img", cv::WINDOW_NORMAL);
+  cv::imshow("img", img);
+  cv::waitKey(0);
 
   // cv::imshow("yellow", yellow_map);
   // cv::waitKey(0);
