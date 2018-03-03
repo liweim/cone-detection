@@ -17,189 +17,160 @@
 #include <opencv2/imgproc.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
-using namespace boost::filesystem;
-using namespace tiny_dnn;
-using namespace std;
 
-void convert_image(const string &imagefilename,
-                   double minv,
-                   double maxv,
+int PATCH_SIZE = 25;
+
+void convert_image(cv::Mat img,
                    int w,
                    int h,
-                   vec_t &data) {
+                   tiny_dnn::vec_t& data){
 
-  image<> img(imagefilename, tiny_dnn::image_type::rgb);
-  image<> resized = resize_image(img, w, h);
-  data.resize(resized.width() * resized.height() * resized.depth());
-  for (size_t c = 0; c < resized.depth(); ++c) {
-    for (size_t y = 0; y < resized.height(); ++y) {
-      for (size_t x = 0; x < resized.width(); ++x) {
-        data[c * resized.width() * resized.height() + y * resized.width() + x] =
-          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
+  cv::Mat resized;
+  cv::resize(img, resized, cv::Size(w, h));
+  data.resize(w * h * 3);
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t y = 0; y < h; ++y) {
+      for (size_t x = 0; x < w; ++x) {
+        data[c * w * h + y * w + x] =
+          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
       }
     }
   }
 }
 
-// void mat2array(cv::Mat _mat, tiny_dnn::vec_t &ovect){
-//     switch(_mat.channels()) {
-//         case 1: {
-//             tiny_dnn::float_t *ptr = _mat.ptr<tiny_dnn::float_t>(0);
-//             ovect = tiny_dnn::vec_t(ptr, ptr + _mat.cols * _mat.rows );
-//         } break;
-//         case 3: {
-//             std::vector<cv::Mat> _vmats;
-//             cv::split(_mat, _vmats);
-//             for(int i = 0; i < 3; i++) {
-//                 cv::Mat _chanmat = _vmats[i];
-//                 tiny_dnn::float_t *ptr = _chanmat.ptr<tiny_dnn::float_t>(0);
-//                 ovect.insert(ovect.end(), ptr, ptr + _mat.cols * _mat.rows);
-//             }
-//         } break;
-//     }
-//     // for(int i=0;i<ovect.size();i++){
-//     //   std::cout<< ovect[i]<<std::endl;
-//     // }
-// }
-
 // convert all images found in directory to vec_t
-void load_data(const string& directory,
-                    double minv,
-                    double maxv,
+void load_data(const std::string& directory,
                     int w,
                     int h,
-                    vector<vec_t>& train_imgs,
-                    vector<label_t>& train_labels,
-                    vector<vec_t>& test_imgs,
-                    vector<label_t>& test_labels)
+                    std::vector<tiny_dnn::vec_t>& train_imgs,
+                    std::vector<tiny_dnn::label_t>& train_labels,
+                    std::vector<tiny_dnn::vec_t> train_values,
+                    std::vector<tiny_dnn::vec_t>& test_imgs,
+                    std::vector<tiny_dnn::label_t>& test_labels,
+                    std::vector<tiny_dnn::vec_t> test_values)
 {
-    path dpath(directory);
+    boost::filesystem::path dpath(directory);
     int label_id;
-    vec_t data;
+
+    tiny_dnn::vec_t data;
     double random;
 
-    BOOST_FOREACH(const path& label_path, make_pair(directory_iterator(dpath), directory_iterator())) {
+    BOOST_FOREACH(const boost::filesystem::path& label_path, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
         //if (is_directory(p)) continue;
-        BOOST_FOREACH(const path& img_path, make_pair(directory_iterator(label_path), directory_iterator())) {
+        BOOST_FOREACH(const boost::filesystem::path& img_path, std::make_pair(boost::filesystem::directory_iterator(label_path), boost::filesystem::directory_iterator())) {
           label_id = stoi(label_path.filename().string());
-          convert_image(img_path.string(), minv, maxv, w, h, data);
-          // cv::Mat img = cv::imread(img_path.string());
-          // img.convertTo(img, CV_32FC3);
-          // img /= 255.0;
-          // cv::resize(img, img, cv::Size(w, h));
-          // mat2array(img, data);
+          tiny_dnn::vec_t target_value = {0,0,0,0};
+          target_value[label_id] = 1;
+
+          auto img = cv::imread(img_path.string());
+          convert_image(img, w, h, data);
 
           random = (double)rand()/(double)RAND_MAX;
           if (random < 0.7){
             train_labels.push_back(label_id);
             train_imgs.push_back(data);
+            train_values.push_back(target_value);
           }
           else{
             test_labels.push_back(label_id);
             test_imgs.push_back(data);
+            test_values.push_back(target_value);
           }
 
       }
     }
+    std::cout << "loaded data" << std::endl;
 }
 
 template <typename N>
-void construct_net(N &nn, core::backend_t backend_type) {
-  using conv    = convolutional_layer;
-  using dropout = dropout_layer;
-  using pool    = max_pooling_layer;
-  using fc      = fully_connected_layer;
-  using relu    = relu_layer;
-  using softmax = softmax_layer;
-  using sigmoid = sigmoid_layer;
+void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
+  using conv    = tiny_dnn::convolutional_layer;
+  using pool    = tiny_dnn::max_pooling_layer;
+  using fc      = tiny_dnn::fully_connected_layer;
+  using relu    = tiny_dnn::relu_layer;
+  using softmax = tiny_dnn::softmax_layer;
 
   // const size_t n_fmaps  = 32;  // number of feature maps for upper layer
   // const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
   // const size_t n_fc     = 64;  // number of hidden units in fc layer
-  //
-  // nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
+
+  const size_t input_size  = 25;
+  nn << conv(input_size, input_size, 7, 3, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-6, input_size-6, 7, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     //<< dropout((input_size-12)*(input_size-12)*32, 0.25)
+     << conv(input_size-12, input_size-12, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     //<< dropout((input_size-20)*(input_size-20)*32, 0.25)
+     << conv(input_size-20, input_size-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-22, input_size-22, 3, 32, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+
+  // nn << conv(PATCH_SIZE, PATCH_SIZE, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
   //            backend_type)                      // C1
   //    << pool(32, 32, n_fmaps, 2, backend_type)  // P2
   //    << relu()                                  // activation
-  //    << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
+  //    << conv(16, 16, 5, n_fmaps, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
   //            backend_type)                      // C3
   //    << pool(16, 16, n_fmaps, 2, backend_type)  // P4
   //    << relu()                                  // activation
-  //    << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
+  //    << conv(8, 8, 5, n_fmaps, n_fmaps2, tiny_dnn::padding::same, true, 1, 1,
   //            backend_type)                                // C5
   //    << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
   //    << relu()                                            // activation
   //    << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
   //    << relu()                                            // activation
-  //    << fc(n_fc, 3, true, backend_type) << softmax(3);  // FC10
-
-  // nn << conv(32, 32, 5, 3, 32, padding::same)  // C1
-  //    << pool(32, 32, 32, 2)                              // P2
-  //    << relu(16, 16, 32)                                 // activation
-  //    << conv(16, 16, 5, 32, 32, padding::same)  // C3
-  //    << pool(16, 16, 32, 2)                                    // P4
-  //    << relu(8, 8, 32)                                        // activation
-  //    << conv(8, 8, 5, 32, 64, padding::same)  // C5
-  //    << pool(8, 8, 64, 2)                                    // P6
-  //    << relu(4, 4, 64)                                       // activation
-  //    << conv(4, 4, 5, 64, 3, padding::same)
-  //    << pool(4, 4, 3, 4)
-  //    << softmax(3);
-
-  const size_t input_size  = 25;
-  nn << conv(input_size, input_size, 7, 3, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-6, input_size-6, 7, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     //<< dropout((input_size-12)*(input_size-12)*32, 0.25)
-     << conv(input_size-12, input_size-12, 5, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-16, input_size-16, 5, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     //<< dropout((input_size-20)*(input_size-20)*32, 0.25)
-     << conv(input_size-20, input_size-20, 3, 32, 32, padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-22, input_size-22, 3, 32, 3, padding::valid, true, 1, 1, backend_type) << softmax(3);
+  //    << fc(n_fc, 4, true, backend_type) << softmax(4);  // FC10
 
    for (int i = 0; i < nn.depth(); i++) {
-        cout << "#layer:" << i << "\n";
-        cout << "layer type:" << nn[i]->layer_type() << "\n";
-        cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
-        cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
+        std::cout << "#layer:" << i << "\n";
+        std::cout << "layer type:" << nn[i]->layer_type() << "\n";
+        std::cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
+        std::cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
     }
 }
 
-void train_cifar10(string data_dir_path,
+void train_network(std::string data_dir_path,
                    double learning_rate,
                    const int n_train_epochs,
                    const int n_minibatch,
-                   core::backend_t backend_type,
-                   ostream &log) {
+                   tiny_dnn::core::backend_t backend_type,
+                   std::ostream &log) {
   // specify loss-function and learning strategy
-  network<sequential> nn;
-  adam optimizer;
+  tiny_dnn::network<tiny_dnn::sequential> nn;
+  tiny_dnn::adam optimizer;
 
   construct_net(nn, backend_type);
 
-  cout << "load models..." << endl;
+  std::vector<tiny_dnn::label_t> train_labels, test_labels;
+  std::vector<tiny_dnn::vec_t> train_images, test_images;
+  std::vector<tiny_dnn::vec_t> train_values, test_values;
 
-  // load cifar dataset
-  vector<label_t> train_labels, test_labels;
-  vector<vec_t> train_images, test_images;
+  load_data(data_dir_path, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, train_values, test_images, test_labels, test_values);
 
-  load_data(data_dir_path, 0, 1, 25, 25, train_images, train_labels, test_images, test_labels);
+  std::cout << "start learning" << std::endl;
 
-  cout << "start learning" << endl;
+  tiny_dnn::progress_display disp(train_images.size());
+  tiny_dnn::timer t;
 
-  progress_display disp(train_images.size());
-  timer t;
-
-  optimizer.alpha *=
-    static_cast<float_t>(sqrt(n_minibatch) * learning_rate);
+  optimizer.alpha *= static_cast<float_t>(sqrt(n_minibatch) * learning_rate);
 
   int epoch = 1;
+  int num_success = 0;
   // create callback
   auto on_enumerate_epoch = [&]() {
-    cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
-              << t.elapsed() << "s elapsed." << endl;
+    std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
+              << t.elapsed() << "s elapsed." << std::endl;
     ++epoch;
-    result res = nn.test(test_images, test_labels);
-    log << res.num_success << "/" << res.num_total << endl;
+    tiny_dnn::result res = nn.test(test_images, test_labels);
+    log << res.num_success << "/" << res.num_total << std::endl;
+
+    // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy>(train_images, train_values);
+    // float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy>(test_images, test_values);
+    // std::cout << "Training loss: " << loss_train << ", " << "validation loss: " << loss_val << std::endl;
+    if(num_success < res.num_success){
+      num_success = res.num_success;
+      std::ofstream ofs ("models/efficient_sliding_window");
+      ofs << nn;
+    }
 
     disp.restart(train_images.size());
     t.restart();
@@ -208,55 +179,52 @@ void train_cifar10(string data_dir_path,
   auto on_enumerate_minibatch = [&]() { disp += n_minibatch; };
 
   // training
-  nn.train<cross_entropy>(optimizer, train_images, train_labels,
+  nn.train<tiny_dnn::cross_entropy>(optimizer, train_images, train_labels,
                                     n_minibatch, n_train_epochs,
                                     on_enumerate_minibatch, on_enumerate_epoch);
 
-  cout << "end training." << endl;
+  std::cout << "end training." << std::endl;
 
   // test and show results
-  nn.test(test_images, test_labels).print_detail(cout);
-  // save networks
-  ofstream ofs("models/sliding_window");
-  ofs << nn;
+  nn.test(test_images, test_labels).print_detail(std::cout);
 }
 
-static core::backend_t parse_backend_name(const string &name) {
-  const array<const string, 5> names = {
+static tiny_dnn::core::backend_t parse_backend_name(const std::string &name) {
+  const std::array<const std::string, 5> names = {
     "internal", "nnpack", "libdnn", "avx", "opencl",
   };
   for (size_t i = 0; i < names.size(); ++i) {
     if (name.compare(names[i]) == 0) {
-      return static_cast<core::backend_t>(i);
+      return static_cast<tiny_dnn::core::backend_t>(i);
     }
   }
-  return core::default_engine();
+  return tiny_dnn::core::default_engine();
 }
 
 static void usage(const char *argv0) {
-  cout << "Usage: " << argv0 << " --data_path path_to_dataset_folder"
+  std::cout << "Usage: " << argv0 << " --data_path path_to_dataset_folder"
             << " --learning_rate 0.001"
             << " --epochs 100"
             << " --minibatch_size 32"
-            << " --backend_type internal" << endl;
+            << " --backend_type internal" << std::endl;
 }
 
 int main(int argc, char **argv) {
   double learning_rate                   = 0.01;
   int epochs                             = 5;
-  string data_path                       = "";
-  int minibatch_size                     = 32;
-  core::backend_t backend_type = core::default_engine();
+  std::string data_path                       = "";
+  int minibatch_size                     = 128;
+  tiny_dnn::core::backend_t backend_type = tiny_dnn::core::default_engine();
 
   if (argc == 2) {
-    string argname(argv[1]);
+    std::string argname(argv[1]);
     if (argname == "--help" || argname == "-h") {
       usage(argv[0]);
       return 0;
     }
   }
   for (int count = 1; count + 1 < argc; count += 2) {
-    string argname(argv[count]);
+    std::string argname(argv[count]);
     if (argname == "--learning_rate") {
       learning_rate = atof(argv[count + 1]);
     } else if (argname == "--epochs") {
@@ -266,49 +234,49 @@ int main(int argc, char **argv) {
     } else if (argname == "--backend_type") {
       backend_type = parse_backend_name(argv[count + 1]);
     } else if (argname == "--data_path") {
-      data_path = string(argv[count + 1]);
+      data_path = std::string(argv[count + 1]);
     } else {
-      cerr << "Invalid parameter specified - \"" << argname << "\""
-                << endl;
+      std::cerr << "Invalid parameter specified - \"" << argname << "\""
+                << std::endl;
       usage(argv[0]);
       return -1;
     }
   }
   if (data_path == "") {
-    cerr << "Data path not specified." << endl;
+    std::cerr << "Data path not specified." << std::endl;
     usage(argv[0]);
     return -1;
   }
   if (learning_rate <= 0) {
-    cerr
+    std::cerr
       << "Invalid learning rate. The learning rate must be greater than 0."
-      << endl;
+      << std::endl;
     return -1;
   }
   if (epochs <= 0) {
-    cerr << "Invalid number of epochs. The number of epochs must be "
+    std::cerr << "Invalid number of epochs. The number of epochs must be "
                  "greater than 0."
-              << endl;
+              << std::endl;
     return -1;
   }
   if (minibatch_size <= 0 || minibatch_size > 50000) {
-    cerr
+    std::cerr
       << "Invalid minibatch size. The minibatch size must be greater than 0"
          " and less than dataset size (50000)."
-      << endl;
+      << std::endl;
     return -1;
   }
-  cout << "Running with the following parameters:" << endl
-            << "Data path: " << data_path << endl
-            << "Learning rate: " << learning_rate << endl
-            << "Minibatch size: " << minibatch_size << endl
-            << "Number of epochs: " << epochs << endl
-            << "Backend type: " << backend_type << endl
-            << endl;
+  std::cout << "Running with the following parameters:" << std::endl
+            << "Data path: " << data_path << std::endl
+            << "Learning rate: " << learning_rate << std::endl
+            << "Minibatch size: " << minibatch_size << std::endl
+            << "Number of epochs: " << epochs << std::endl
+            << "Backend type: " << backend_type << std::endl
+            << std::endl;
   try {
-    train_cifar10(data_path, learning_rate, epochs, minibatch_size,
-                  backend_type, cout);
-  } catch (nn_error &err) {
-    cerr << "Exception: " << err.what() << endl;
+    train_network(data_path, learning_rate, epochs, minibatch_size,
+                  backend_type, std::cout);
+  } catch (tiny_dnn::nn_error &err) {
+    std::cerr << "Exception: " << err.what() << std::endl;
   }
 }

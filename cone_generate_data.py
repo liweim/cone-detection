@@ -15,6 +15,11 @@ import random
 PATCH_SIZE = 32
 radius = int((PATCH_SIZE-1)/2)
 
+def random_shift(x, y, max_pixel):
+    x_shift = x + random.choice(range(-max_pixel, max_pixel))
+    y_shift = y + random.choice(range(-max_pixel, max_pixel))
+    return x_shift, y_shift
+
 def generate_data(path):
     data_path = join('tmp','data')
     if os.path.exists(data_path):
@@ -50,8 +55,9 @@ def generate_data(path):
             y2 = int(member[4][3].text)
             x = int((x1+x2)/2)
             y = int((y1+y2)/2)
+            # x, y = random_shift(x, y, 3)
             max_length = max(abs(x2-x1), abs(y2-y1))
-            ratio = max_length/PATCH_SIZE
+            ratio = max_length/PATCH_SIZE*1.5
             cones.append([x, y, ratio, label])
             cv2.circle(mask, (x, y), int(16*ratio), 100, -1)
         txt_path = basename+'.csv'

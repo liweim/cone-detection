@@ -1,0 +1,15 @@
+std::cout << typeid(prob).name() << std::endl;
+std::cout << prob.size() << std::endl;
+for (auto i: path)
+  std::cout << i << ' ';
+
+cv::circle(rectified, cv::Point (x,y), radius, cv::Scalar (0,0,0));
+
+cv::namedWindow("disp", cv::WINDOW_NORMAL);
+cv::imshow("disp", rectified);
+cv::waitKey(0);
+cv::destroyAllWindows();
+
+cv::imwrite("test.png",rectified);
+
+cv::Mat b = cv::Mat(cv::Size(5,5),CV_8UC3);
