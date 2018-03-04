@@ -114,7 +114,7 @@ std::vector <cv::Point> imregionalmax(cv::Mat input, int nLocMax, double thresho
     return locations;
 }
 
-void recognize(const std::string &dictionary, const std::string &img_path, double threshold) {
+void detect_roi(const std::string &dictionary, const std::string &img_path, double threshold) {
   int patch_size = 25;
   int patch_radius = (patch_size-1)/2;
   double factor = 2;
@@ -240,6 +240,103 @@ void recognize(const std::string &dictionary, const std::string &img_path, doubl
   //   cout << scores[i].second << "," << scores[i].first << endl;
 }
 
+void detect_img(const std::string &dictionary, const std::string &img_path, double threshold) {
+  int patch_size = 25;
+  int patch_radius = (patch_size-1)/2;
+  int input_width = 640;
+  int height_up = 140;
+  int height_down = 100;
+  int input_height = 360-height_up-height_down;
+
+  int output_width  = input_width - (patch_size - 1);
+  int output_height  = input_height - (patch_size - 1);
+
+  tiny_dnn::network<tiny_dnn::sequential> nn;
+
+  construct_net(nn, tiny_dnn::core::default_engine(), input_width, input_height);
+
+  // load nets
+  std::ifstream ifs(dictionary.c_str());
+  ifs >> nn;
+
+  cv::Rect roi;
+  roi.x = 0;
+  roi.y = height_up;
+  roi.width = input_width;
+  roi.height = input_height;
+  auto img = cv::imread(img_path);
+  auto patch_img = img(roi);
+
+  // convert imagefile to vec_t
+  tiny_dnn::vec_t data;
+  convert_image(patch_img, input_width, input_height, data);
+
+  // recognize
+  auto prob = nn.predict(data);
+
+  cv::Mat prob_map = cv::Mat::zeros(output_height, output_width, CV_32FC4);
+  for (size_t c = 0; c < 4; ++c)
+    for (size_t y = 0; y < output_height; ++y)
+      for (size_t x = 0; x < output_width; ++x)
+         prob_map.at<cv::Vec4f>(y, x)[c] = prob[c * output_width * output_height + y * output_width + x];
+
+  cv::Vec4f prob_softmax(4);
+  cv::Mat prob_map_softmax = cv::Mat::zeros(output_height, output_width, CV_32FC3);
+  for (size_t y = 0; y < output_height; ++y)
+    for (size_t x = 0; x < output_width; ++x){
+      softmax(prob_map.at<cv::Vec4f>(y, x), prob_softmax);
+      for (size_t c = 0; c < 3; ++c)
+        if(prob_softmax[c+1] > threshold)
+          prob_map_softmax.at<cv::Vec3f>(y, x)[c] = prob_softmax[c+1];
+    }
+  cv::Mat prob_map_split[3];
+  cv::split(prob_map_softmax, prob_map_split);
+
+  // for (size_t c = 0; c < 3; ++c){
+  //   cv::namedWindow("img", cv::WINDOW_NORMAL);
+  //   cv::imshow("img", prob_map_split[c]);
+  //   cv::waitKey(0);
+  //   cv::destroyAllWindows();
+  // }
+
+  std::vector <cv::Point> yellow, blue, orange;
+
+  int minDistBtwLocMax = 20;
+  yellow = imregionalmax(prob_map_split[0], 4, threshold, minDistBtwLocMax);
+  blue = imregionalmax(prob_map_split[1], 4, threshold, minDistBtwLocMax);
+  orange = imregionalmax(prob_map_split[2], 2, threshold, minDistBtwLocMax);
+
+  cv::Point position, positionShift = cv::Point(patch_radius, patch_radius+height_up);
+
+  if (yellow.size()>0){
+    for(int i=0; i<yellow.size(); i++){
+      position = yellow[i] + positionShift;
+      cv::circle(img, position, 1, {0, 255, 255}, -1);
+      std::cout << "Find a yellow cone: " << position << std::endl;
+    }
+  }
+  if (blue.size()>0){
+    for(int i=0; i<blue.size(); i++){
+      position = blue[i] + positionShift;
+      cv::circle(img, position, 1, {255, 0, 0}, -1);
+      std::cout << "Find a blue cone: " << position << std::endl;
+    }
+  }
+  if (orange.size()>0){
+    for(int i=0; i<orange.size(); i++){
+      position = orange[i] + positionShift;
+      cv::circle(img, position, 1, {0, 165, 255}, -1);
+      std::cout << "Find a orange cone: " << position << std::endl;
+    }
+  }
+  int index = img_path.find_last_of('/');
+  std::string save_path(img_path.substr(index+1));
+  cv::namedWindow("img", cv::WINDOW_NORMAL);
+  cv::imshow("img", img);
+  cv::waitKey(0);
+  cv::imwrite("result/"+save_path, img);
+}
+
 int main(int argc, char **argv) {
-  recognize("models/efficient_sliding_window", argv[1], atof(argv[2]));
+  detect_img("models/efficient_sliding_window", argv[1], atof(argv[2]));
 }

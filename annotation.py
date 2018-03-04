@@ -10,7 +10,7 @@ import cv2
 from rename_img import rename_img
 import argparse
 
-patch_size = 25
+patch_size = 32
 
 def annotation(img_path, data):
     dirname = os.path.split(img_path)[0]

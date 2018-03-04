@@ -13,3 +13,5 @@ cv::destroyAllWindows();
 cv::imwrite("test.png",rectified);
 
 cv::Mat b = cv::Mat(cv::Size(5,5),CV_8UC3);
+
+image = img[max(y-radius,0):min(y+radius+1,row), max(x-radius,0):min(x+radius+1,col), :]

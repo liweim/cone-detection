@@ -24,8 +24,8 @@ def annotate_region(model_id, img_path, mode):
         xy.append([x, y])
     xy = np.array(xy)
 
-    n = len(os.listdir(join('images', model_id)))
-    cv2.imwrite(join('images', model_id, str(n+1)+'.png'), img)
+    n = len(os.listdir(join('annotations', model_id)))
+    cv2.imwrite(join('annotations', model_id, str(n+1)+'.png'), img)
     write_txt(join('annotations', model_id, str(n+1)+'.txt'), xy, way='w')
 
 if __name__ == '__main__':

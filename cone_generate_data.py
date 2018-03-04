@@ -59,7 +59,7 @@ def generate_data(path):
             max_length = max(abs(x2-x1), abs(y2-y1))
             ratio = max_length/PATCH_SIZE*1.5
             cones.append([x, y, ratio, label])
-            cv2.circle(mask, (x, y), int(16*ratio), 100, -1)
+            cv2.circle(mask, (x, y), int(12*ratio), 100, -1)
         txt_path = basename+'.csv'
         df = pd.DataFrame(cones, columns=column_name)
         df.to_csv(txt_path, index=None)
@@ -67,7 +67,7 @@ def generate_data(path):
         for x, y, ratio, label in cones:
             cv2.circle(mask, (x, y), int(8*ratio), 0, -1)
         for x, y, ratio, label in cones:
-            cv2.circle(mask, (x, y), int(1*ratio), 255, -1)
+            cv2.circle(mask, (x, y), int(2*ratio), 255, -1)
         # mask[:radius, :] = 0
         # mask[img.shape[0]-radius:, :] = 0
         # mask[:, :radius] = 0
@@ -100,6 +100,23 @@ def generate_data(path):
                         image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
                         num = len(os.listdir(save_folder_path))
                         cv2.imwrite(join(save_folder_path, str(num)+'.png'), image)
+
+    background_folder = 'annotations/background'
+    path = join(background_folder, '*.txt')
+    for txt_path in glob.glob(path):
+        img_path = txt_path[:-3]+'png'
+        img = cv2.imread(img_path)
+        points = read_txt(txt_path)
+        mode = int(points[0][1])
+        row, col = img.shape[:2]
+        for point in points:
+            x = int(point[0])
+            y = int(point[1])
+            if mode == 1:
+                image = img[max(y-radius,0):min(y+radius+1,row), max(x-radius,0):min(x+radius+1,col), :]
+                image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+                num = len(os.listdir(background_path))
+                cv2.imwrite(join(background_path, str(num)+'.png'), image)
 
     print('Background: {}'.format(len(os.listdir(background_path))))
     print('Yellow: {}'.format(len(os.listdir(yellow_path))))
