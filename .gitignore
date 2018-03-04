@@ -3,7 +3,6 @@
 .project
 .pydevproject
 calibration
-result
 stereo_calibration
 video2
 old-sliding-windows/data
