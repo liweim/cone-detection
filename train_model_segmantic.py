@@ -1,13 +1,14 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 import os
-from PIL import Image
 import h5py
 import time
 from os.path import join
 import cv2
 import argparse
 from random import random, choice
+from Utils import read_txt
+from scipy.misc import imresize
 
 from keras.models import Sequential, model_from_json
 from keras.layers import Dense, Flatten, BatchNormalization,Dropout
@@ -17,144 +18,118 @@ from keras.utils import np_utils
 from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 from keras import regularizers
 from keras.preprocessing.image import ImageDataGenerator
+from keras import initializers
 
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.1
+config.gpu_options.per_process_gpu_memory_fraction = 0.6
 set_session(tf.Session(config=config))
 
-PATCH_SIZE = 25
+PATCH_SIZE = 45
+radius = int((PATCH_SIZE-1)/2)
 CHANNEL = 3
-num_class = len(os.listdir('images')) + 1
 
-def load_data(train_num):
-    images = []
-    classes = []
-    labels = []
-    imgs = []
-    masks = []
-    flags = []
-    back_areas = [0]
-    front_areas = [0]
-    radius = 12
+def load_data():
+    x_train = []
+    x_test = []
+    y_train = []
+    y_test = []
 
-    annotation_folder_path = 'annotations'
-    image_folder_path = 'images'
-    cone_ids = os.listdir(annotation_folder_path)
-    num = np.zeros(len(cone_ids)+1)
-    for cone_id in cone_ids:
-        annotation_paths = os.listdir(join(annotation_folder_path, cone_id))
-        for img_path in annotation_paths:
-            img = cv2.imread(join(image_folder_path, cone_id, img_path))
-            mask = cv2.imread(join(annotation_folder_path, cone_id, img_path), 0)
-            imgs.append(img)
-            masks.append(mask)
-            labels.append(int(cone_id))
-            flags.append(np.zeros(mask.shape))
-            front_area = np.sum(mask==255)
-            back_area = np.sum(mask==100)
-            front_areas.append(front_area)
-            back_areas.append(back_area)
+    train_path = join('tmp', 'data', 'train')
+    test_path = join('tmp', 'data', 'test')
+    labels = os.listdir(train_path)
+    num_label = len(labels)
+    for label in labels:
+        folder_path = join(train_path, label)
+        paths = os.listdir(folder_path)
+        for path in paths:
+            image = cv2.imread(join(folder_path, path))
+            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+            x_train.append(np.array(image, dtype = np.float32)/255)
+            y_train.append(label)
 
-    sum_front_area = np.sum(front_areas)
-    sum_back_area = np.sum(back_areas)
-    print('Train num: {}'.format(train_num))
-    print('Frontground area: {}'.format(sum_front_area))
-    print('Background area: {}'.format(sum_back_area))
-    if train_num > sum_front_area:
-        print('Train number should be less than {}'. format(sum_front_area))
-        return
-    if train_num > sum_back_area:
-        print('Train number should be less than {}'. format(sum_back_area))
-        return
+        folder_path = join(test_path, label)
+        paths = os.listdir(folder_path)
+        for path in paths:
+            image = cv2.imread(join(folder_path, path))
+            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+            x_test.append(np.array(image, dtype = np.float32)/255)
+            y_test.append(label)
 
-    front_areas /= sum_front_area
-    back_areas /= sum_back_area
-    for i in range(1, len(back_areas)):
-        mask = masks[i-1]
-        front_areas[i] = front_areas[i] + front_areas[i-1]
-        back_areas[i] = back_areas[i] + back_areas[i-1]
-        if mask.max() == 100:
-            back_areas[i] *= 1.5
-    back_areas /= back_areas[-1]
+    x_train = np.array(x_train)
+    y_train = np.array(y_train)
+    x_test = np.array(x_test)
+    y_test = np.array(y_test)
 
-    for count in range(train_num):
-        rd = random()
-        for i in range(len(imgs)):
-            img = imgs[i]
-            mask = masks[i]
-            label = labels[i]
-            rs, cs = mask.shape
-            r = choice(range(radius, rs-radius))
-            c = choice(range(radius, cs-radius))
-            if rd < back_areas[i+1] and rd > back_areas[i]:
-                while not mask[r, c] == 100:
-                    r = choice(range(radius, rs-radius))
-                    c = choice(range(radius, cs-radius))
-                image = img[r-radius:r+radius+1, c-radius:c+radius+1, :]
-                image = cv2.resize(image, (25, 25))
-                images.append(image)
-                classes.append(0)
-                num[0] += 1
-            if rd < front_areas[i+1] and rd > front_areas[i]:
-                while not mask[r, c] == 255 or flags[i][r, c] == 1:
-                    r = choice(range(radius, rs-radius))
-                    c = choice(range(radius, cs-radius))
-                image = img[r-radius:r+radius+1, c-radius:c+radius+1, :]
-                image = cv2.resize(image, (25, 25))
-                images.append(image)
-                classes.append(label)
-                num[label] += 1
-                flags[i][r, c] = 1
+    num_y_train = len(y_train)
+    y_train = np_utils.to_categorical(y_train)
+    y_train = y_train.reshape(num_y_train, 1, 1, num_label)
+    num_y_test = len(y_test)
+    y_test = np_utils.to_categorical(y_test)
+    y_test = y_test.reshape(num_y_test, 1, 1, num_label)
 
-    print(np.array(images).shape)
-    x = np.array(images, dtype = np.float32)
-    x /= 255
-    y = np.array(classes, dtype = np.uint8)
-    y = np_utils.to_categorical(y)
-    y = y.reshape(y.shape[0], 1, 1, y.shape[1])
+    return x_train, x_test, y_train, y_test, num_label, num_y_train
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
-    return x_train, x_test, y_train, y_test
-
-def network():
+def network(num_label, epoch, lr):
     model = Sequential()
-    model.add(Conv2D(32, (7, 7), input_shape = (None, None, CHANNEL), activation='relu'))
-    model.add(Conv2D(32, (7, 7),  activation = 'relu'))
-    #model.add(Dropout(0.25))
+    model.add(Conv2D(64, (7, 7), input_shape = (None, None, CHANNEL), activation='relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(64, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Dropout(0.25))
 
-    model.add(Conv2D(64, (5, 5), activation = 'relu'))
-    model.add(Conv2D(64, (5, 5), activation = 'relu'))
-    #model.add(Dropout(0.25))
+    model.add(Conv2D(64, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(64, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Dropout(0.25))
 
-    model.add(Conv2D(128, (3, 3), activation = 'relu'))
-    model.add(Conv2D(num_class, (3, 3), activation = 'softmax'))
+    model.add(Conv2D(128, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(128, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Dropout(0.25))
 
-    adam=Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    model.add(Conv2D(128, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(128, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(512, (3, 3), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(num_label, (3, 3), activation = 'softmax'))
+
+    adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999, decay = lr/epoch)
     model.compile(loss='categorical_crossentropy', optimizer = adam, metrics=['accuracy'])
     return model
 
-def train_model(train_num):
-    save_path = join('models', 'model_cone')
-    batch_size = 256
-    x_train, x_test, y_train, y_test = load_data(train_num)
+def train_model(model_name, checkpoint):
+    save_path = join('models', model_name)
+    x_train, x_test, y_train, y_test, num_label, train_num = load_data()
+    datagen = ImageDataGenerator(samplewise_center=False,samplewise_std_normalization=False,rotation_range=1,zoom_range=0.3,shear_range=0,vertical_flip=True,horizontal_flip=True,fill_mode="nearest")
 
-    model = network()
+    lr = 0.0001
+    epoch = 100
+    if train_num < 10000:
+        batch_size = 64
+    elif train_num < 100000:
+        batch_size = 256
+    else:
+        batch_size = 1024
+    model = network(num_label, epoch, lr)
     model_json = model.to_json()
     with open(save_path + '.json', "w") as json_file:
         json_file.write(model_json)
     print("Saved model to disk")
 
+    if not checkpoint == 'None':
+        model.load_weights(checkpoint)
+        print('Using transfer learning')
+
     tb = TensorBoard(log_dir='tmp/logs/model')
     estop = EarlyStopping(monitor='val_loss', patience=10)
-    checkpoint = ModelCheckpoint(save_path + '.h5', monitor="val_loss",save_best_only=True, verbose=1)
-    model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=100, batch_size=256, callbacks=[tb,estop,checkpoint])
+    save_checkpoint = ModelCheckpoint(save_path + '.h5', monitor="val_loss",save_best_only=True, verbose=1)
+    # model.fit(x_train, y_train, validation_data=(x_test, y_test), epochs=epoch, batch_size=batch_size, callbacks=[tb, estop, save_checkpoint])
+    model.fit_generator(datagen.flow(x_train, y_train, batch_size = batch_size), validation_data = (x_test, y_test), steps_per_epoch = len(x_train) / batch_size, epochs = epoch, callbacks = [tb, estop, save_checkpoint])
     model.summary()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_num", type=int, help="Train num")
+    parser.add_argument("--model_name", type=str, help="Model name.")
+    parser.add_argument("--checkpoint", type=str, default='None', help="Using checkpoint.")
     args = parser.parse_args()
 
-    train_model(train_num = args.train_num)
+    train_model(model_name = args.model_name, checkpoint = args.checkpoint)

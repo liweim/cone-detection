@@ -44,10 +44,8 @@ void load_data(const std::string& directory,
                     int h,
                     std::vector<tiny_dnn::vec_t>& train_imgs,
                     std::vector<tiny_dnn::label_t>& train_labels,
-                    std::vector<tiny_dnn::vec_t> train_values,
                     std::vector<tiny_dnn::vec_t>& test_imgs,
-                    std::vector<tiny_dnn::label_t>& test_labels,
-                    std::vector<tiny_dnn::vec_t> test_values)
+                    std::vector<tiny_dnn::label_t>& test_labels)
 {
     boost::filesystem::path dpath(directory);
     int label_id;
@@ -59,8 +57,6 @@ void load_data(const std::string& directory,
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& img_path, std::make_pair(boost::filesystem::directory_iterator(label_path), boost::filesystem::directory_iterator())) {
           label_id = stoi(label_path.filename().string());
-          tiny_dnn::vec_t target_value = {0,0,0,0};
-          target_value[label_id] = 1;
 
           auto img = cv::imread(img_path.string());
           convert_image(img, w, h, data);
@@ -69,12 +65,10 @@ void load_data(const std::string& directory,
           if (random < 0.7){
             train_labels.push_back(label_id);
             train_imgs.push_back(data);
-            train_values.push_back(target_value);
           }
           else{
             test_labels.push_back(label_id);
             test_imgs.push_back(data);
-            test_values.push_back(target_value);
           }
 
       }
@@ -132,9 +126,8 @@ void train_network(std::string data_dir_path,
 
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
-  std::vector<tiny_dnn::vec_t> train_values, test_values;
 
-  load_data(data_dir_path, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, train_values, test_images, test_labels, test_values);
+  load_data(data_dir_path, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, test_images, test_labels);
 
   std::cout << "start learning" << std::endl;
 
