@@ -1,0 +1,36 @@
+python cone_generate_data.py --annotation_path skidpad1 --data_path data_no_resize --no_resize 1
+
+python train_efficient_sliding_window.py  --model_name efficient_sliding_window
+
+python plant_detect_efficient.py --img_path tmp/915/915.tif --model_id 2 --plant_distance 10 --show_img 0 --threshold 0.9 --resize_rate 1 --test_mode 0
+
+#good:0, bad:1, good+bad:-1
+python annotate_region.py --mode -1 --img_path annotations/skidpad1/1513418735.872856.png --model_id yellow
+
+python rectify_all.py --img_folder_path real-test/20171216/camera/skippad1/stereo
+
+python reconstruction.py --img_path ZED/1/stereo/2.png
+
+python annotation.py --img_path annotations/skidpad1/1513418735.872856.png --data tmp/data/0
+
+python cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/model_cone --cone_distance 50 --threshold 0.9
+
+
+
+
+
+g++ train_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_sliding_window
+
+./train_sliding_window --data_path tmp/data_resize --epochs 50
+
+g++ sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o sliding_window
+
+./sliding_window annotations/skidpad1/1513418735.872856.png
+
+g++ train_efficient_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_efficient_sliding_window
+
+./train_efficient_sliding_window --data_path tmp/data_any --epochs 50
+
+g++ efficient_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o efficient_sliding_window
+
+./efficient_sliding_window images/skidpad1 0.9
