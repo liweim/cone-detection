@@ -30,32 +30,46 @@ PATCH_SIZE = 25
 radius = int((PATCH_SIZE-1)/2)
 CHANNEL = 3
 
-def load_data():
-    x = []
-    y = []
+def load_data(data_path):
+    x_train = []
+    x_test = []
+    y_train = []
+    y_test = []
 
-    data_path = join('tmp', 'data')
-    labels = os.listdir(data_path)
+    train_path = join('tmp', data_path, 'train')
+    test_path = join('tmp', data_path, 'test')
+    labels = os.listdir(train_path)
     num_label = len(labels)
     for label in labels:
-        folder_path = join(data_path, label)
+        folder_path = join(train_path, label)
         paths = os.listdir(folder_path)
         for path in paths:
             image = cv2.imread(join(folder_path, path))
             image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
-            x.append(np.array(image, dtype = np.float32)/255)
-            y.append(label)
+            x_train.append(np.array(image, dtype = np.float32)/255)
+            y_train.append(label)
 
-    x = np.array(x)
-    y = np.array(y)
+        folder_path = join(test_path, label)
+        paths = os.listdir(folder_path)
+        for path in paths:
+            image = cv2.imread(join(folder_path, path))
+            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+            x_test.append(np.array(image, dtype = np.float32)/255)
+            y_test.append(label)
 
-    num_y = len(y)
-    y = np_utils.to_categorical(y)
-    y = y.reshape(num_y, 1, 1, num_label)
+    x_train = np.array(x_train)
+    y_train = np.array(y_train)
+    x_test = np.array(x_test)
+    y_test = np.array(y_test)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3)
+    num_y_train = len(y_train)
+    y_train = np_utils.to_categorical(y_train)
+    y_train = y_train.reshape(num_y_train, 1, 1, num_label)
+    num_y_test = len(y_test)
+    y_test = np_utils.to_categorical(y_test)
+    y_test = y_test.reshape(num_y_test, 1, 1, num_label)
 
-    return x_train, x_test, y_train, y_test, num_label, num_y
+    return x_train, x_test, y_train, y_test, num_label, num_y_train
 
 def network(num_label, epoch, lr):
     model = Sequential()
@@ -70,13 +84,13 @@ def network(num_label, epoch, lr):
     model.add(Conv2D(512, (3, 3), activation = 'relu', kernel_initializer='he_normal'))
     model.add(Conv2D(num_label, (3, 3), activation = 'softmax'))
 
-    adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999, decay = lr/epoch)
+    adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999)
     model.compile(loss='categorical_crossentropy', optimizer = adam, metrics=['accuracy'])
     return model
 
-def train_model(model_name, checkpoint):
+def train_model(model_name, data_path, checkpoint):
     save_path = join('models', model_name)
-    x_train, x_test, y_train, y_test, num_label, train_num = load_data()
+    x_train, x_test, y_train, y_test, num_label, train_num = load_data(data_path)
     # datagen = ImageDataGenerator(samplewise_center=False,samplewise_std_normalization=False,rotation_range=1,zoom_range=0.3,shear_range=0,vertical_flip=True,horizontal_flip=True,fill_mode="nearest")
 
     lr = 0.0001
@@ -107,7 +121,8 @@ def train_model(model_name, checkpoint):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, help="Model name.")
+    parser.add_argument("--data_path", type=str, help="Data path.")
     parser.add_argument("--checkpoint", type=str, default='None', help="Using checkpoint.")
     args = parser.parse_args()
 
-    train_model(model_name = args.model_name, checkpoint = args.checkpoint)
+    train_model(model_name = args.model_name, data_path = args.data_path, checkpoint = args.checkpoint)

@@ -1,19 +1,13 @@
-python cone_generate_data.py --annotation_path skidpad1 --data_path data_no_resize --no_resize 1
-
-python train_efficient_sliding_window.py  --model_name efficient_sliding_window
-
-python plant_detect_efficient.py --img_path tmp/915/915.tif --model_id 2 --plant_distance 10 --show_img 0 --threshold 0.9 --resize_rate 1 --test_mode 0
-
 #good:0, bad:1, good+bad:-1
-python annotate_region.py --mode -1 --img_path annotations/skidpad1/1513418735.872856.png --model_id yellow
+python3 cone_annotate_region.py --mode -1 --img_path annotations/skidpad1/1513418736.741893.png --model_id yellow
 
-python rectify_all.py --img_folder_path real-test/20171216/camera/skippad1/stereo
+python3 cone_generate_data_xml.py --annotation_path skidpad1 --data_path data_no_resize --no_resize 1
 
-python reconstruction.py --img_path ZED/1/stereo/2.png
+python3 cone_generate_data_txt.py --data_path data_triangle
 
-python annotation.py --img_path annotations/skidpad1/1513418735.872856.png --data tmp/data/0
+python3 train_efficient_sliding_window.py  --model_name efficient_sliding_window --data_path data_triangle
 
-python cone_detect.py --img_path ZED/1/rectify/right/4.png --model_path models/model_cone --cone_distance 50 --threshold 0.9
+python3 efficient_sliding_window.py --img_path annotations/skidpad1/1513418735.872856.png --model_path models/efficient_sliding_window --cone_distance 3 --threshold 0.9
 
 
 
