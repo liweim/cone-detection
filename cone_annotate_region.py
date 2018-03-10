@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from Utils import write_txt
 import glob
 
-def callback(x):
-    pass
+patch_size = 45
+radius = int((patch_size-1)/2)
 
 def annotate_region(model_id, img_path,  mode):
     basename = os.path.split(img_path)[1]
@@ -30,7 +30,6 @@ def annotate_region(model_id, img_path,  mode):
     img_roi = img[rl:rr, cl:cr]
     img_source_roi = img_source[rl:rr, cl:cr]
 
-    radius = 12
     img_roi[radius, :] = (0,0,255)
     img_roi[img_roi.shape[0]-radius, :] = (0,0,255)
     img_roi[:, radius] = (0,0,255)

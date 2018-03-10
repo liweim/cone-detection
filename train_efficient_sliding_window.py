@@ -26,9 +26,9 @@ from keras import initializers
 # config.gpu_options.per_process_gpu_memory_fraction = 0.6
 # set_session(tf.Session(config=config))
 
-PATCH_SIZE = 25
-radius = int((PATCH_SIZE-1)/2)
-CHANNEL = 3
+patch_size = 45
+radius = int((patch_size-1)/2)
+channel = 3
 
 def load_data(data_path):
     x_train = []
@@ -45,7 +45,7 @@ def load_data(data_path):
         paths = os.listdir(folder_path)
         for path in paths:
             image = cv2.imread(join(folder_path, path))
-            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+            image = cv2.resize(image, (patch_size, patch_size))
             x_train.append(np.array(image, dtype = np.float32)/255)
             y_train.append(label)
 
@@ -53,7 +53,7 @@ def load_data(data_path):
         paths = os.listdir(folder_path)
         for path in paths:
             image = cv2.imread(join(folder_path, path))
-            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
+            image = cv2.resize(image, (patch_size, patch_size))
             x_test.append(np.array(image, dtype = np.float32)/255)
             y_test.append(label)
 
@@ -73,18 +73,26 @@ def load_data(data_path):
 
 def network(num_label, epoch, lr):
     model = Sequential()
-    model.add(Conv2D(64, (7, 7), input_shape = (None, None, CHANNEL), activation='relu', kernel_initializer='he_normal'))
-    model.add(Conv2D(64, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (7, 7), input_shape = (None, None, channel), activation='relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(128, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
-    model.add(Conv2D(128, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (7, 7),  activation = 'relu', kernel_initializer='he_normal'))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(512, (3, 3), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(16, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Conv2D(16, (5, 5), activation = 'relu', kernel_initializer='he_normal'))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(128, (3, 3), activation = 'relu', kernel_initializer='he_normal'))
     model.add(Conv2D(num_label, (3, 3), activation = 'softmax'))
 
-    adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999)
+    adam=Adam(lr=lr, beta_1=0.9, beta_2=0.999, decay=lr/epoch)
     model.compile(loss='categorical_crossentropy', optimizer = adam, metrics=['accuracy'])
     return model
 
@@ -93,7 +101,7 @@ def train_model(model_name, data_path, checkpoint):
     x_train, x_test, y_train, y_test, num_label, train_num = load_data(data_path)
     # datagen = ImageDataGenerator(samplewise_center=False,samplewise_std_normalization=False,rotation_range=1,zoom_range=0.3,shear_range=0,vertical_flip=True,horizontal_flip=True,fill_mode="nearest")
 
-    lr = 0.0001
+    lr = 0.001
     epoch = 100
     if train_num < 10000:
         batch_size = 64

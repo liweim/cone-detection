@@ -12,21 +12,21 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 from random import random
 
-PATCH_SIZE = 25
-radius = int((PATCH_SIZE-1)/2)
-resize_rate = 0.5
+patch_size = 45
+radius = int((patch_size-1)/2)
+resize_rate = 1
 
 def augmentation(img):
     zoom_rate = random()
 
     # if random() > 0.7:
     #     M = cv2.getRotationMatrix2D((radius, radius), 90*choice(range(4)), 1)
-    #     img = cv2.warpAffine(img, M, (PATCH_SIZE,PATCH_SIZE))
+    #     img = cv2.warpAffine(img, M, (patch_size,patch_size))
 
     if zoom_rate > 0.7:
-        R = int(PATCH_SIZE*zoom_rate/2)
+        R = int(patch_size*zoom_rate/2)
         img = img[radius-R:radius+R, radius-R:radius+R]
-        img = cv2.resize(img, (PATCH_SIZE, PATCH_SIZE))
+        img = cv2.resize(img, (patch_size, patch_size))
 
     return img
 
@@ -66,14 +66,14 @@ def generate_data_txt(data_path):
                 xs.append(x)
                 ys.append(y)
                 if mode == -1:
-                    cv2.circle(mask, (x, y), 8, 100, -1)
+                    cv2.circle(mask, (x, y), 10, 100, -1)
             if mode == -1:
                 for x, y in zip(xs, ys):
-                    cv2.circle(mask, (x, y), 4, 0, -1)
+                    cv2.circle(mask, (x, y), 6, 0, -1)
             for x, y in zip(xs, ys):
                 if mode == 1:
-                    mask[y, x] = 200
-                    # cv2.circle(mask, (x, y), 1, 200, -1)
+                    # mask[y, x] = 200
+                    cv2.circle(mask, (x, y), 1, 200, -1)
                 else:
                     cv2.circle(mask, (x, y), 2, 255, -1)
             mask[:radius, :] = 0

@@ -19,12 +19,15 @@ import pandas as pd
 import random
 from scipy.misc import imresize
 
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.1
-set_session(tf.Session(config=config))
+# import tensorflow as tf
+# from keras.backend.tensorflow_backend import set_session
+# config = tf.ConfigProto()
+# config.gpu_options.per_process_gpu_memory_fraction = 0.1
+# set_session(tf.Session(config=config))
 
+patch_size = 45
+patch_radius = int((patch_size-1)/2)
+resize_rate = 1
 color = [(0, 255, 255), (255, 0, 0), (0, 165, 255)]
 class_label = ['yellow', 'blue', 'orange']
 
@@ -82,36 +85,39 @@ def strict_local_maximum(prob_map, cone_distance):
     idx = np.where(prob_gau > prob_fil)
     return idx
 
-def cone_detect(img_path, model_path, cone_distance, threshold):
-    basename = os.path.split(img_path)[1]
-
+def load_network(model_path):
     json_file = open(model_path+'.json', 'r')
     loaded_model_json = json_file.read()
     json_file.close()
     model = model_from_json(loaded_model_json)
     model.load_weights(model_path+'.h5')
-    print("Loaded model from disk")
+    return model
 
-    patch_size = 25
-    patch_radius = int((patch_size-1)/2)
+def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
+    basename = os.path.split(img_path)[1]
+
     channel = 3
     num_class = 3
     classes = range(1, num_class+1)
+    up_limit = 170
+    down_limit = 290 * resize_rate
 
     img_source = cv2.imread(img_path)
-    img = imresize(img_source, 0.5)
-    img = img[70:130,:,:]
+    if resize_rate == 1:
+        img = np.copy(img_source)
+    else:
+        img = imresize(img_source, resize_rate)
+
+    img = img[int(up_limit*resize_rate):int(down_limit*resize_rate),:,:]
     img_pad = load_image(img, patch_radius)
     rows, cols = img.shape[:2]
     rows_pad, cols_pad = img_pad.shape[:2]
     prob_map = np.zeros([rows, cols, num_class])
 
-    start = time.clock()
     input_image = np.expand_dims(img_pad, axis = 0)
     prob = model.predict(input_image)
     prob = np.squeeze(prob)
     prob_map = prob[:, :, classes]
-    print('Run time: {}'.format(time.clock() - start))
 
     #threshold, cone_distance = trackbar(img, prob_map, num_class)
 
@@ -135,28 +141,22 @@ def cone_detect(img_path, model_path, cone_distance, threshold):
         #             temp_img[rt, ct, :] = img[rt, ct, :]
 
         for idx in range(len(idxes[0])):
-            x = int(idxes[0][idx]*2+140)
-            y = int(idxes[1][idx]*2)
+            x = int(idxes[0][idx]/resize_rate+up_limit)
+            y = int(idxes[1][idx]/resize_rate)
             # cones.append([x, y, i_class])
             # print(x, y, i_class)
             cv2.circle(img_source, (y, x), 1, color[i_class], -1)
 
-    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty("img", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    cv2.imshow('img', img_source)
-    cv2.waitKey(0)
+    if display_result:
+        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty("img", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow('img', img_source)
+        cv2.waitKey(0)
     save_path = join('tmp', 'result', basename)
     cv2.imwrite(save_path, img_source)
 
-def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
+def cone_detect_roi(csv_folder_path, model, bias_rate, threshold):
     dirname = os.path.split(csv_folder_path)[0]
-
-    json_file = open(model_path+'.json', 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    model = model_from_json(loaded_model_json)
-    model.load_weights(model_path+'.h5')
-    print("Loaded model from disk")
 
     patch_size = 25
     patch_radius = int((patch_size-1)/2)
@@ -271,6 +271,10 @@ def cone_detect_roi(csv_folder_path, model_path, bias_rate, threshold):
     average_time = whole_time/len(csv_paths)
     print(average_time)
 
+def efficient_sliding_window(img_path, model_path, cone_distance, threshold, display_result = 1):
+    model = load_network(model_path)
+    cone_detect(img_path, model, cone_distance, threshold, display_result)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--img_path", type = str)
@@ -279,4 +283,4 @@ if __name__ == '__main__':
     parser.add_argument("--threshold", type = float)
     args = parser.parse_args()
 
-    cone_detect(img_path = args.img_path, model_path = args.model_path, cone_distance = args.cone_distance, threshold = args.threshold)
+    efficient_sliding_window(img_path = args.img_path, model_path = args.model_path, cone_distance = args.cone_distance, threshold = args.threshold)
