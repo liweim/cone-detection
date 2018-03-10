@@ -127,25 +127,41 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
     #     temp_img[:, :, i] = gray
 
     # cones = []
-    for i_class in range(num_class):
-        mask = prob_map[:, :, i_class]
-        index_map = mask > threshold
-        mask = mask * index_map
-        idxes = strict_local_maximum(mask, cone_distance)
 
-        # for r in range(rows):
-        #     for c in range(cols):
-        #         if index_map[r, c]:
-        #             rt = int(r*2)
-        #             ct = int(c*2)
-        #             temp_img[rt, ct, :] = img[rt, ct, :]
-
-        for idx in range(len(idxes[0])):
-            x = int(idxes[0][idx]/resize_rate+up_limit)
-            y = int(idxes[1][idx]/resize_rate)
+    max_index_map = prob_map > threshold
+    max_map_tmp = prob_map * max_index_map
+    max_map = np.sum(max_map_tmp, 2)
+    idxes = strict_local_maximum(max_map, cone_distance)
+    for idx in range(len(idxes[0])):
+        x = int(idxes[0][idx])
+        y = int(idxes[1][idx])
+        if max_map[x, y] > 0:
+            i_class = int(np.where(max_index_map[x, y] > 0)[0])
+            x = int(x/resize_rate+up_limit)
+            y = int(y/resize_rate)
             # cones.append([x, y, i_class])
             # print(x, y, i_class)
             cv2.circle(img_source, (y, x), 1, color[i_class], -1)
+
+    # for i_class in range(num_class):
+    #     mask = prob_map[:, :, i_class]
+    #     index_map = mask > threshold
+    #     mask = mask * index_map
+    #     idxes = strict_local_maximum(mask, cone_distance)
+    #
+    #     # for r in range(rows):
+    #     #     for c in range(cols):
+    #     #         if index_map[r, c]:
+    #     #             rt = int(r*2)
+    #     #             ct = int(c*2)
+    #     #             temp_img[rt, ct, :] = img[rt, ct, :]
+    #
+    #     for idx in range(len(idxes[0])):
+    #         x = int(idxes[0][idx]/resize_rate+up_limit)
+    #         y = int(idxes[1][idx]/resize_rate)
+    #         # cones.append([x, y, i_class])
+    #         # print(x, y, i_class)
+    #         cv2.circle(img_source, (y, x), 1, color[i_class], -1)
 
     if display_result:
         cv2.namedWindow('img', cv2.WINDOW_NORMAL)

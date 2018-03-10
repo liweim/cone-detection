@@ -1,15 +1,15 @@
 #good:0, bad:1, good+bad:-1
-python3 cone_annotate_region.py --mode -1 --img_path annotations/skidpad1/1513418740.428629.png --model_id yellow
+python3 cone_annotate_region.py --mode 1 --img_path annotations/skidpad1/1513418736.532264.png --model_id background
 
 python3 cone_generate_data_xml.py --annotation_path skidpad1 --data_path data_no_resize --no_resize 1
 
-python3 cone_generate_data_txt.py --data_path data_triangle
+python3 cone_generate_data_txt.py --data_path data_center
 
-python3 train_efficient_sliding_window.py  --model_name efficient_sliding_window --data_path data_triangle
+python3 train_efficient_sliding_window.py  --model_name efficient_sliding_window --data_path data_center
 
-python3 efficient_sliding_window.py --img_path annotations/skidpad1/1513418735.872856.png --model_path models/efficient_sliding_window --cone_distance 3 --threshold 0.9
+python3 efficient_sliding_window.py --img_path annotations/skidpad1/annotations/skidpad1/1513418746.296055.png --model_path models/efficient_sliding_window --cone_distance 3 --threshold 0.9
 
-python3 cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path models/efficient_sliding_window --cone_distance 5 --threshold 0.9
+python3 cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path models/efficient_sliding_window --cone_distance 10 --threshold 0.9
 
 
 
