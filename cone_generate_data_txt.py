@@ -75,7 +75,7 @@ def generate_data_txt(data_path):
                     # mask[y, x] = 200
                     cv2.circle(mask, (x, y), 1, 200, -1)
                 else:
-                    cv2.circle(mask, (x, y), 2, 255, -1)
+                    cv2.circle(mask, (x, y), 3, 255, -1)
             mask[:radius, :] = 0
             mask[img.shape[0]-radius:, :] = 0
             mask[:, :radius] = 0
