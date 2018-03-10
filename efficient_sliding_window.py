@@ -95,6 +95,7 @@ def load_network(model_path):
 
 def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
     basename = os.path.split(img_path)[1]
+    filename = os.path.splitext(basename)[0]
 
     channel = 3
     num_class = 3
@@ -126,8 +127,7 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
     # for i in range(3):
     #     temp_img[:, :, i] = gray
 
-    # cones = []
-
+    cones = []
     max_index_map = prob_map > threshold
     max_map_tmp = prob_map * max_index_map
     max_map = np.sum(max_map_tmp, 2)
@@ -139,8 +139,7 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
             i_class = int(np.where(max_index_map[x, y] > 0)[0])
             x = int(x/resize_rate+up_limit)
             y = int(y/resize_rate)
-            # cones.append([x, y, i_class])
-            # print(x, y, i_class)
+            cones.append([x, y, i_class])
             cv2.circle(img_source, (y, x), 1, color[i_class], -1)
 
     # for i_class in range(num_class):
@@ -170,6 +169,11 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
         cv2.waitKey(0)
     save_path = join('tmp', 'result', basename)
     cv2.imwrite(save_path, img_source)
+
+    column_name = ['x', 'y', 'label']
+
+    cone_df = pd.DataFrame(cones, columns=column_name)
+    cone_df.to_csv(join('tmp', 'result', filename+'.csv'), index=None)
 
 def cone_detect_roi(csv_folder_path, model, bias_rate, threshold):
     dirname = os.path.split(csv_folder_path)[0]
