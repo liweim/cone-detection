@@ -23,7 +23,7 @@ g++ sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-conf
 
 g++ train_efficient_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_efficient_sliding_window
 
-./train_efficient_sliding_window --data_path tmp/data_any --epochs 50
+./train_efficient_sliding_window --data_path tmp/data_center --epochs 50
 
 g++ efficient_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o efficient_sliding_window
 

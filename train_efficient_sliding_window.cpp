@@ -18,7 +18,7 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
-int input_size = 25;
+int input_size = 45;
 
 void convert_image(cv::Mat img,
                    int w,
@@ -47,30 +47,36 @@ void load_data(const std::string& directory,
                     std::vector<tiny_dnn::vec_t>& test_imgs,
                     std::vector<tiny_dnn::label_t>& test_labels)
 {
-    boost::filesystem::path dpath(directory);
-    int label_id;
+    boost::filesystem::path trainPath(directory+"/train");
+    boost::filesystem::path testPath(directory+"/test");
+    int labelId;
 
     tiny_dnn::vec_t data;
     double random;
 
-    BOOST_FOREACH(const boost::filesystem::path& label_path, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
+    BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(trainPath), boost::filesystem::directory_iterator())) {
         //if (is_directory(p)) continue;
-        BOOST_FOREACH(const boost::filesystem::path& img_path, std::make_pair(boost::filesystem::directory_iterator(label_path), boost::filesystem::directory_iterator())) {
-          label_id = stoi(label_path.filename().string());
+        BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
+          labelId = stoi(labelPath.filename().string());
 
-          auto img = cv::imread(img_path.string());
+          auto img = cv::imread(imgPath.string());
           convert_image(img, w, h, data);
 
           random = (double)rand()/(double)RAND_MAX;
-          if (random < 0.7){
-            train_labels.push_back(label_id);
-            train_imgs.push_back(data);
-          }
-          else{
-            test_labels.push_back(label_id);
-            test_imgs.push_back(data);
-          }
+          train_labels.push_back(labelId);
+          train_imgs.push_back(data);
+      }
+    }
+    BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(testPath), boost::filesystem::directory_iterator())) {
+        //if (is_directory(p)) continue;
+        BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
+          labelId = stoi(labelPath.filename().string());
 
+          auto img = cv::imread(imgPath.string());
+          convert_image(img, w, h, data);
+
+          test_labels.push_back(labelId);
+          test_imgs.push_back(data);
       }
     }
     std::cout << "loaded data" << std::endl;
@@ -83,15 +89,22 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using fc      = tiny_dnn::fully_connected_layer;
   using relu    = tiny_dnn::relu_layer;
   using softmax = tiny_dnn::softmax_layer;
+  using dropout = tiny_dnn::dropout_layer;
 
-  nn << conv(input_size, input_size, 7, 3, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-6, input_size-6, 7, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     //<< dropout((input_size-12)*(input_size-12)*32, 0.25)
-     << conv(input_size-12, input_size-12, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     //<< dropout((input_size-20)*(input_size-20)*32, 0.25)
-     << conv(input_size-20, input_size-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-22, input_size-22, 3, 32, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+  nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-12)*(input_size-12)*16, 0.25)
+     << conv(input_size-12, input_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-18, input_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-24)*(input_size-24)*16, 0.25)
+     << conv(input_size-24, input_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-28, input_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-32)*(input_size-32)*16, 0.25)
+     << conv(input_size-32, input_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-36, input_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-40)*(input_size-40)*16, 0.25)
+     << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";
