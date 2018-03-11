@@ -52,7 +52,6 @@ void load_data(const std::string& directory,
     int labelId;
 
     tiny_dnn::vec_t data;
-    double random;
 
     BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(trainPath), boost::filesystem::directory_iterator())) {
         //if (is_directory(p)) continue;
@@ -62,7 +61,6 @@ void load_data(const std::string& directory,
           auto img = cv::imread(imgPath.string());
           convert_image(img, w, h, data);
 
-          random = (double)rand()/(double)RAND_MAX;
           train_labels.push_back(labelId);
           train_imgs.push_back(data);
       }
@@ -93,16 +91,16 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
 
   nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << dropout((input_size-12)*(input_size-12)*16, 0.25)
+     // << dropout((input_size-12)*(input_size-12)*16, 0.25)
      << conv(input_size-12, input_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-18, input_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << dropout((input_size-24)*(input_size-24)*16, 0.25)
+     // << dropout((input_size-24)*(input_size-24)*16, 0.25)
      << conv(input_size-24, input_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-28, input_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << dropout((input_size-32)*(input_size-32)*16, 0.25)
+     // << dropout((input_size-32)*(input_size-32)*16, 0.25)
      << conv(input_size-32, input_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-36, input_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << dropout((input_size-40)*(input_size-40)*16, 0.25)
+     // << dropout((input_size-40)*(input_size-40)*16, 0.25)
      << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
