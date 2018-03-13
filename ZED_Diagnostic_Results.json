@@ -1,0 +1,205 @@
+{
+    "Camera Test": {
+        "ZEDCount": 1,
+        "deviceInitResult": 0,
+        "firmware": 1142,
+        "resolutions": {
+            "HD1080@15": {
+                "fps (input)": 15,
+                "fps (output)": 15,
+                "height (input)": 1080,
+                "height (output)": 1080,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 1920,
+                "width (output)": 1920
+            },
+            "HD1080@30": {
+                "fps (input)": 30,
+                "fps (output)": 30,
+                "height (input)": 1080,
+                "height (output)": 1080,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 1920,
+                "width (output)": 1920
+            },
+            "HD2K@15": {
+                "fps (input)": 15,
+                "fps (output)": 15,
+                "height (input)": 1242,
+                "height (output)": 1242,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 2208,
+                "width (output)": 2208
+            },
+            "HD720@15": {
+                "fps (input)": 15,
+                "fps (output)": 15,
+                "height (input)": 720,
+                "height (output)": 720,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 1280,
+                "width (output)": 1280
+            },
+            "HD720@30": {
+                "fps (input)": 30,
+                "fps (output)": 30,
+                "height (input)": 720,
+                "height (output)": 720,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 1280,
+                "width (output)": 1280
+            },
+            "HD720@60": {
+                "dropCount": 480,
+                "error": [
+                    "<b>USB bandwidth is too low</b> <br/> Change the cable or connect the camera to another <b>USB 3.0</b> port.<br/> Frame drop: 480/480<br/> Frame tearing: 0/480"
+                ],
+                "fps (input)": 60,
+                "fps (output)": 60,
+                "height (input)": 720,
+                "height (output)": 720,
+                "initCode": true,
+                "initialization": "Ok",
+                "tearingCount": 0,
+                "width (input)": 1280,
+                "width (output)": 1280
+            },
+            "VGA@100": {
+                "fps (input)": 100,
+                "fps (output)": 100,
+                "height (input)": 376,
+                "height (output)": 376,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 672,
+                "width (output)": 672
+            },
+            "VGA@15": {
+                "fps (input)": 15,
+                "fps (output)": 15,
+                "height (input)": 376,
+                "height (output)": 376,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 672,
+                "width (output)": 672
+            },
+            "VGA@30": {
+                "fps (input)": 30,
+                "fps (output)": 30,
+                "height (input)": 376,
+                "height (output)": 376,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 672,
+                "width (output)": 672
+            },
+            "VGA@60": {
+                "fps (input)": 60,
+                "fps (output)": 60,
+                "height (input)": 376,
+                "height (output)": 376,
+                "initCode": true,
+                "initialization": "Ok",
+                "width (input)": 672,
+                "width (output)": 672
+            }
+        },
+        "serial": 16163,
+        "valid": [
+            "<b>Camera: </b> OK"
+        ],
+        "videoNumber": 0
+    },
+    "Graphics Card": {
+        "deviceCount": 1,
+        "deviceDriverVersion": 9010,
+        "devices": [
+            {
+                "arch": "Pascal",
+                "computeCapability": "6.1",
+                "cores": 1280,
+                "name": "GeForce GTX 1060 6GB",
+                "totalMemoryBytes": "4294967295",
+                "totalMemoryMB": 4096
+            }
+        ],
+        "initResult": 0
+    },
+    "Processor": {
+        "OS": "Ubuntu 16.04.3 LTS ",
+        "avxSupported": true,
+        "coreCount": "16",
+        "cpu": " AMD Ryzen 7 1700 Eight-Core Processor",
+        "datetime": "2018-02-14 17:42:10",
+        "hyperThreading": "1",
+        "motherboard": "AB350N-Gaming WIFI-CF\n, Gigabyte Technology Co., Ltd.\n",
+        "ramCapacity": "16,834990",
+        "ramUsage": "",
+        "ramUsed": "6,321943",
+        "threadCount": "32",
+        "valid": [
+            "<b>Processor: </b>  AMD Ryzen 7 1700 Eight-Core Processor",
+            "<b>Motherboard: </b> AB350N-Gaming WIFI-CF\n, Gigabyte Technology Co., Ltd.\n"
+        ]
+    },
+    "USB": {
+        "USBList": [
+            {
+                "idProduct": 3,
+                "idVendor": 7531
+            },
+            {
+                "idProduct": 8195,
+                "idVendor": 16700
+            },
+            {
+                "idProduct": 12310,
+                "idVendor": 16700
+            },
+            {
+                "idProduct": 2,
+                "idVendor": 7531
+            },
+            {
+                "ZEDUSBMode": 3,
+                "bDeviceProtocol": 1,
+                "bcdUSB": "3.0",
+                "bcdUSBClass": 239,
+                "bcdUSBSubClass": 2,
+                "iManufacturer": 1,
+                "iProduct": 2,
+                "iSerial": 0,
+                "idProduct": 62848,
+                "idVendor": 11011
+            },
+            {
+                "idProduct": 3,
+                "idVendor": 7531
+            },
+            {
+                "idProduct": 2602,
+                "idVendor": 32903
+            },
+            {
+                "idProduct": 2,
+                "idVendor": 7531
+            }
+        ],
+        "ZEDDetected": true,
+        "ZEDUSBMode": 3
+    },
+    "ZED SDK": {
+        "CUDA Toolkit version": "V9.1.85",
+        "DiagnosticZEDSDKVersion": "2.3.0",
+        "InstalledZEDSDKVersion": "Unkown",
+        "SMI": "(SMI) :     Performance State               : P8",
+        "initResult": 0,
+        "loaded": true
+    }
+}
