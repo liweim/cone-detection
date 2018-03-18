@@ -13,18 +13,18 @@ python cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path mo
 
 
 
-g++ train_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_sliding_window
+g++ train_sliding_window.cpp -I /home/weiming/ubuntu-project/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_sliding_window
 
-./train_sliding_window --data_path tmp/data_resize --epochs 50
+./train_sliding_window --data_path tmp/data_center --epochs 50
 
-g++ sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o sliding_window
+g++ sliding_window.cpp -I /home/weiming/ubuntu-project/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o sliding_window
 
 ./sliding_window annotations/skidpad1/1513418735.872856.png
 
-g++ train_efficient_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o train_efficient_sliding_window
+g++ train_efficient_sliding_window.cpp -I /home/weiming/ubuntu-project/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -g -O2 -ltbb -o train_efficient_sliding_window
 
-./train_efficient_sliding_window --data_path tmp/data_center --epochs 50
+./train_efficient_sliding_window --data_path tmp/data_center --epochs 100 --learning_rate 0.001 --minibatch_size 256
 
-g++ efficient_sliding_window.cpp -I /home/weiming/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o efficient_sliding_window
+g++ efficient_sliding_window.cpp -I /home/weiming/ubuntu-project/tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -g -O2 -ltbb -o efficient_sliding_window
 
 ./efficient_sliding_window images/skidpad1 0.9

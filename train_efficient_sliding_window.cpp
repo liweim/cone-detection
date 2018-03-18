@@ -57,10 +57,9 @@ void load_data(const std::string& directory,
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
           labelId = stoi(labelPath.filename().string());
-
           auto img = cv::imread(imgPath.string());
-          convert_image(img, w, h, data);
 
+          convert_image(img, w, h, data);
           train_labels.push_back(labelId);
           train_imgs.push_back(data);
       }
@@ -69,10 +68,9 @@ void load_data(const std::string& directory,
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
           labelId = stoi(labelPath.filename().string());
-
           auto img = cv::imread(imgPath.string());
-          convert_image(img, w, h, data);
 
+          convert_image(img, w, h, data);
           test_labels.push_back(labelId);
           test_imgs.push_back(data);
       }
@@ -89,20 +87,29 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using softmax = tiny_dnn::softmax_layer;
   using dropout = tiny_dnn::dropout_layer;
 
-  nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     // << dropout((input_size-12)*(input_size-12)*16, 0.25)
-     << conv(input_size-12, input_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-18, input_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     // << dropout((input_size-24)*(input_size-24)*16, 0.25)
-     << conv(input_size-24, input_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-28, input_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     // << dropout((input_size-32)*(input_size-32)*16, 0.25)
-     << conv(input_size-32, input_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-36, input_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     // << dropout((input_size-40)*(input_size-40)*16, 0.25)
-     << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+  // nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << dropout((input_size-12)*(input_size-12)*16, 0.25)
+  //    << conv(input_size-12, input_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-18, input_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << dropout((input_size-24)*(input_size-24)*16, 0.25)
+  //    << conv(input_size-24, input_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-28, input_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << dropout((input_size-32)*(input_size-32)*16, 0.25)
+  //    << conv(input_size-32, input_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-36, input_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << dropout((input_size-40)*(input_size-40)*16, 0.25)
+  //    << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+
+  nn << conv(input_size, input_size, 7, 3, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-6, input_size-6, 7, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((inputSize-12)*(inputSize-12)*32, 0.25)
+     << conv(input_size-12, input_size-12, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((inputSize-20)*(inputSize-20)*32, 0.25)
+     << conv(input_size-20, input_size-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-22, input_size-22, 3, 32, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";
@@ -123,6 +130,9 @@ void train_network(std::string data_dir_path,
   tiny_dnn::adam optimizer;
 
   construct_net(nn, backend_type);
+
+  // std::ifstream ifs("efficient_sliding_window");
+  // ifs >> nn;
 
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
@@ -151,7 +161,7 @@ void train_network(std::string data_dir_path,
     // std::cout << "Training loss: " << loss_train << ", " << "validation loss: " << loss_val << std::endl;
     if(num_success < res.num_success){
       num_success = res.num_success;
-      std::ofstream ofs ("models/efficient_sliding_window");
+      std::ofstream ofs ("models/efficientSlidingWindow");
       ofs << nn;
     }
 
@@ -196,8 +206,8 @@ int main(int argc, char **argv) {
   double learning_rate                   = 0.01;
   int epochs                             = 5;
   std::string data_path                       = "";
-  int minibatch_size                     = 128;
-  tiny_dnn::core::backend_t backend_type = tiny_dnn::core::default_engine();
+  int minibatch_size                     = 32;
+  tiny_dnn::core::backend_t backend_type = tiny_dnn::core::backend_t::avx;
 
   if (argc == 2) {
     std::string argname(argv[1]);

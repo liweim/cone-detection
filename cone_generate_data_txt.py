@@ -12,9 +12,9 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 from random import random
 
-patch_size = 45
+patch_size = 25
 radius = int((patch_size-1)/2)
-resize_rate = 1
+resize_rate = 0.5
 
 def augmentation(img):
     zoom_rate = random()
@@ -82,7 +82,7 @@ def generate_data_txt(data_path):
             mask[:, img.shape[1]-radius:] = 0
 
             if mode == -1:
-                pickup_rate = np.sum(mask==255)/np.sum(mask==100)/3
+                pickup_rate = np.sum(mask==255)/np.sum(mask==100)/5
             # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
             # cv2.imshow('mask', mask)
             # cv2.waitKey(0)

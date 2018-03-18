@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
   double learning_rate                   = 0.01;
   int epochs                             = 5;
   std::string data_path                       = "";
-  int minibatch_size                     = 128;
+  int minibatch_size                     = 16;
   tiny_dnn::core::backend_t backend_type = tiny_dnn::core::default_engine();
 
   if (argc == 2) {

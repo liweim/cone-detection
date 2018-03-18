@@ -42,30 +42,29 @@ void convertImage(cv::Mat img,
 }
 
 template <typename N>
-void constructNetwork(N &nn, tiny_dnn::core::backend_t backend_type, int width, int height) {
+void constructNetwork(const std::string &dictionary, tiny_dnn::network<tiny_dnn::sequential> &nn, int width, int height) {
   using conv    = tiny_dnn::convolutional_layer;
-  using dropout = tiny_dnn::dropout_layer;
-  using pool    = tiny_dnn::max_pooling_layer;
-  using fc      = tiny_dnn::fully_connected_layer;
   using relu    = tiny_dnn::relu_layer;
-  using softmax = tiny_dnn::softmax_layer;
-  using sigmoid = tiny_dnn::sigmoid_layer;
+  tiny_dnn::core::backend_t backend_type = tiny_dnn::core::avx;
 
-  nn << conv(width, height, 7, 3, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(width-6, height-6, 7, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     //<< dropout((inputSize-12)*(inputSize-12)*32, 0.25)
-     << conv(width-12, height-12, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(width-16, height-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     //<< dropout((inputSize-20)*(inputSize-20)*32, 0.25)
-     << conv(width-20, height-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(width-22, height-22, 3, 32, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type);
+  nn << conv(width, height, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-6, height-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     // << dropout((input_size-12)*(input_size-12)*16, 0.25)
+     << conv(width-12, height-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-18, height-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     // << dropout((input_size-24)*(input_size-24)*16, 0.25)
+     << conv(width-24, height-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-28, height-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     // << dropout((input_size-32)*(input_size-32)*16, 0.25)
+     << conv(width-32, height-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-36, height-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     // << dropout((input_size-40)*(input_size-40)*16, 0.25)
+     << conv(width-40, height-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(width-42, height-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type);
 
-  // for (int i = 0; i < nn.depth(); i++) {
-  //   std::cout << "#layer:" << i << "\n";
-  //   std::cout << "layer type:" << nn[i]->layer_type() << "\n";
-  //   std::cout << "input:" << nn[i]->in_size() << "(" << nn[i]->in_shape() << ")\n";
-  //   std::cout << "output:" << nn[i]->out_size() << "(" << nn[i]->out_shape() << ")\n";
-  // }
+  // load nets
+  std::ifstream ifs(dictionary.c_str());
+  ifs >> nn;
 }
 
 void softmax(cv::Vec4f x, cv::Vec4f &y) {
@@ -243,15 +242,14 @@ void detectRoI(const std::string &modelPath, const std::string &imgPath, double 
 }
 
 void detectImg(const std::string &modelPath, const std::string &imgPath, double threshold) {
-  double resize_rate = 0.5;
-  int patchSize = 25;
-  int patchRadius = (patchSize-1)/2;
-  int width = 640 * resize_rate;
-  int height = 360 * resize_rate;
+  int patchSize = 45;
+  int patchRadius = 22;
+  int width = 640;
+  int height = 360;
   int inputWidth = width;
-  int heightUp = 140* resize_rate;
-  int heightDown = 100* resize_rate;
-  int inputHeight = height-heightUp-heightDown;
+  int inputUp = 170;
+  int inputDown = 290;
+  int inputHeight = inputDown - inputUp;
 
   int outputWidth  = inputWidth - (patchSize - 1);
   int outputHeight  = inputHeight - (patchSize - 1);

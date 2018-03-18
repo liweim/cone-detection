@@ -101,7 +101,7 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
     num_class = 3
     classes = range(1, num_class+1)
     up_limit = 170
-    down_limit = 290 * resize_rate
+    down_limit = 290
 
     img_source = cv2.imread(img_path)
     if resize_rate == 1:
