@@ -18,7 +18,7 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
-int input_size = 45;
+int input_size = 25;
 
 void convert_image(cv::Mat img,
                    int w,
@@ -102,14 +102,14 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   //    << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
   //    << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
-  nn << conv(input_size, input_size, 7, 3, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-6, input_size-6, 7, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << dropout((inputSize-12)*(inputSize-12)*32, 0.25)
-     << conv(input_size-12, input_size-12, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-12)*(input_size-12)*16, 0.25)
+     << conv(input_size-12, input_size-12, 5, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << dropout((inputSize-20)*(inputSize-20)*32, 0.25)
-     << conv(input_size-20, input_size-20, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-22, input_size-22, 3, 32, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+     << dropout((input_size-20)*(input_size-20)*32, 0.25)
+     << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-22, input_size-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";

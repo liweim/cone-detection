@@ -82,7 +82,7 @@ def generate_data_txt(data_path):
             mask[:, img.shape[1]-radius:] = 0
 
             if mode == -1:
-                pickup_rate = np.sum(mask==255)/np.sum(mask==100)/5
+                pickup_rate = np.sum(mask==255)/np.sum(mask==100)/6
             # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
             # cv2.imshow('mask', mask)
             # cv2.waitKey(0)
