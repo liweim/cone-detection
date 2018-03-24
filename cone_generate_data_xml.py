@@ -10,38 +10,42 @@ from shutil import rmtree, copyfile
 import glob
 import xml.etree.ElementTree as ET
 import pandas as pd
-import random
+
+patch_size = 25
+resize_rate = 0.5
+factor0 = 8
+factor100 = 12
+radius = int((patch_size-1)/2)
+
+# patch_size = 32
+# resize_rate = 1
+# factor0 = 20
+# factor100 = 24
+# radius = int((patch_size-1)/2)
 
 def random_shift(x, y, max_pixel):
-    x_shift = x + random.choice(range(-max_pixel, max_pixel))
-    y_shift = y + random.choice(range(-max_pixel, max_pixel))
+    x_shift = x + choice(range(-max_pixel, max_pixel))
+    y_shift = y + choice(range(-max_pixel, max_pixel))
     return x_shift, y_shift
 
-def generate_data_xml(annotation_path, data_path, no_resize):
-    if no_resize:
-        PATCH_SIZE = 25
-        resize_rate = 0.5
-        factor0 = 8
-        factor100 = 12
-    else:
-        PATCH_SIZE = 32
-        resize_rate = 0.999
-        factor0 = 20
-        factor100 = 24
-    radius = int((PATCH_SIZE-1)/2)
+def augmentation(img):
+    #zoom
+    random_rate = random()
+    if random_rate > 0.7:
+        R = int(patch_size*random_rate/2)
+        img = img[radius-R:radius+R, radius-R:radius+R]
+        img = cv2.resize(img, (patch_size, patch_size))
+    return img
 
+def generate_data_xml(annotation_path, data_path, no_resize):
     data_folder_path = join('tmp',data_path)
     if os.path.exists(data_folder_path):
         rmtree(data_folder_path)
-    os.mkdir(data_folder_path)
-    background_path = join(data_folder_path, '0')
-    yellow_path = join(data_folder_path, '1')
-    blue_path = join(data_folder_path, '2')
-    orange_path = join(data_folder_path, '3')
-    os.mkdir(background_path)
-    os.mkdir(yellow_path)
-    os.mkdir(blue_path)
-    os.mkdir(orange_path)
+    # os.mkdir(data_folder_path)
+    for i in range(4):
+        os.makedirs(join(data_folder_path, 'train', str(i)))
+        os.makedirs(join(data_folder_path, 'test', str(i)))
+    classes = ['background', 'yellow', 'blue', 'orange']
 
     count0 = 0
     column_name = ['x', 'y', 'ratio', 'label']
@@ -53,7 +57,7 @@ def generate_data_xml(annotation_path, data_path, no_resize):
         img_path = basename+'.png'
 
         img = cv2.imread(img_path)
-        img = imresize(img, resize_rate)
+        img = imresize(img, 1.0*resize_rate)
         row, col = img.shape[:2]
         mask = np.zeros(img.shape[:2]).astype(np.uint8)
         cones = []
@@ -67,9 +71,14 @@ def generate_data_xml(annotation_path, data_path, no_resize):
             y = int((y1+y2)/2 * resize_rate)
             # x, y = random_shift(x, y, 3)
             max_length = max(abs(x2-x1), abs(y2-y1)) * resize_rate * 1.5
-            ratio = max_length/PATCH_SIZE
-            cones.append([x, y, ratio, label])
-            cv2.circle(mask, (x, y), int(factor100*ratio), 100, -1)
+            ratio = max_length/patch_size
+            # print(ratio)
+            if ratio > 0.5:
+                for r in range(max(0,int(y-3*ratio)),min(row,int(y+1*ratio))):
+                    for c in range(max(0,int(x-2*ratio)),min(col,int(x+3*ratio))):
+                        img[r, c] = [choice(range(256)), choice(range(256)), choice(range(256))]
+                cones.append([x, y, ratio, label])
+                cv2.circle(mask, (x, y), int(factor100*ratio), 100, -1)
 
         txt_path = basename+'.csv'
         df = pd.DataFrame(cones, columns=column_name)
@@ -79,21 +88,21 @@ def generate_data_xml(annotation_path, data_path, no_resize):
             cv2.circle(mask, (x, y), int(factor0*ratio), 0, -1)
         for x, y, ratio, label in cones:
             if label == 'yellow':
-                cv2.circle(mask, (x, y), 1, 253, -1)
+                cv2.circle(mask, (x, y), 2, 253, -1)
             if label == 'blue':
-                cv2.circle(mask, (x, y), 1, 254, -1)
+                cv2.circle(mask, (x, y), 2, 254, -1)
             if label == 'orange':
-                cv2.circle(mask, (x, y), 1, 255, -1)
-        # mask[:radius, :] = 0
-        # mask[img.shape[0]-radius:, :] = 0
-        # mask[:, :radius] = 0
-        # mask[:, img.shape[1]-radius:] = 0
+                cv2.circle(mask, (x, y), 2, 255, -1)
+        mask[:radius, :] = 0
+        mask[img.shape[0]-radius:, :] = 0
+        mask[:, :radius] = 0
+        mask[:, img.shape[1]-radius:] = 0
 
         # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
         # cv2.imshow('mask', mask)
         # cv2.waitKey(0)
 
-        pickup_rate = np.sum(mask==255)/np.sum(mask==100)
+        pickup_rate = np.sum(mask>100)/np.sum(mask==100)/6
         for x, y, ratio, label in cones:
             patch_radius = int(radius * ratio)
             roi_radius = int(factor100 * ratio)
@@ -101,24 +110,29 @@ def generate_data_xml(annotation_path, data_path, no_resize):
                 patch_radius = radius
             for c in range(max(x-roi_radius,patch_radius), min(x+roi_radius,col-patch_radius)):
                 for r in range(max(y-roi_radius,patch_radius), min(y+roi_radius,row-patch_radius)):
+                    image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
+                    image = cv2.resize(image, (patch_size, patch_size))
+                    flag = 0
+                    if random() < 0.7:
+                        image = augmentation(image)
+                        path = join(data_folder_path, 'train')
+                    else:
+                        path = join(data_folder_path, 'test')
                     if mask[r,c] == 100:
-                        if random.random() < pickup_rate:
-                            image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
-                            image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
-                            num = len(os.listdir(background_path))
-                            cv2.imwrite(join(background_path, data_path+'_'+str(num)+'.png'), image)
-
+                        if random() < pickup_rate: 
+                            path = join(path, '0')   
+                            flag = 1                      
                     if mask[r,c] > 100:
+                        flag = 1
                         if mask[r,c] == 253:
-                            save_folder_path = yellow_path
+                            path = join(path, '1')
                         if mask[r,c] == 254:
-                            save_folder_path = blue_path
+                            path = join(path, '2')
                         if mask[r,c] == 255:
-                            save_folder_path = orange_path
-                        image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
-                        image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
-                        num = len(os.listdir(save_folder_path))
-                        cv2.imwrite(join(save_folder_path, data_path+'_'+str(num)+'.png'), image)
+                            path = join(path, '3')
+                    if flag:
+                        num = len(os.listdir(path))
+                        cv2.imwrite(join(path, str(num)+'.png'), image)
 
     background_folder = 'annotations/background'
     path = join(background_folder, '*.txt')
@@ -126,21 +140,23 @@ def generate_data_xml(annotation_path, data_path, no_resize):
         img_path = txt_path[:-3]+'png'
         img = cv2.imread(img_path)
         points = read_txt(txt_path)
-        mode = int(points[0][1])
         row, col = img.shape[:2]
-        for point in points:
+        for point in points[1:]:
             x = int(point[0])
             y = int(point[1])
-            if mode == 1:
-                image = img[max(y-radius,0):min(y+radius+1,row), max(x-radius,0):min(x+radius+1,col), :]
-                image = cv2.resize(image, (PATCH_SIZE, PATCH_SIZE))
-                num = len(os.listdir(background_path))
-                cv2.imwrite(join(background_path, data_path+'_'+str(num)+'.png'), image)
+            image = img[max(y-radius,0):min(y+radius+1,row), max(x-radius,0):min(x+radius+1,col), :]
+            image = cv2.resize(image, (patch_size, patch_size))
+            if random() < 0.7:
+                image = augmentation(image)
+                path = join(data_folder_path, 'train', '0')
+            else:
+                path = join(data_folder_path, 'test', '0')
+            num = len(os.listdir(path))
+            cv2.imwrite(join(path, str(num)+'.png'), image)
 
-    print('Background: {}'.format(len(os.listdir(background_path))))
-    print('Yellow: {}'.format(len(os.listdir(yellow_path))))
-    print('Blue: {}'.format(len(os.listdir(blue_path))))
-    print('Orange: {}'.format(len(os.listdir(orange_path))))
+    for i in range(4):
+        path = join(data_folder_path, 'train', str(i))
+        print('{}: {}'.format(classes[i], len(os.listdir(path))))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

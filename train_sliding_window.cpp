@@ -18,7 +18,7 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
-int PATCH_SIZE = 32;
+int patch_size = 25;
 
 void convert_image(cv::Mat img,
                    int w,
@@ -47,30 +47,32 @@ void load_data(const std::string& directory,
                     std::vector<tiny_dnn::vec_t>& test_imgs,
                     std::vector<tiny_dnn::label_t>& test_labels)
 {
-    boost::filesystem::path dpath(directory);
-    int label_id;
+    boost::filesystem::path trainPath(directory+"/train");
+    boost::filesystem::path testPath(directory+"/test");
+    int labelId;
 
     tiny_dnn::vec_t data;
-    double random;
 
-    BOOST_FOREACH(const boost::filesystem::path& label_path, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
+    BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(trainPath), boost::filesystem::directory_iterator())) {
         //if (is_directory(p)) continue;
-        BOOST_FOREACH(const boost::filesystem::path& img_path, std::make_pair(boost::filesystem::directory_iterator(label_path), boost::filesystem::directory_iterator())) {
-          label_id = stoi(label_path.filename().string());
+        BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
+          labelId = stoi(labelPath.filename().string());
+          auto img = cv::imread(imgPath.string());
 
-          auto img = cv::imread(img_path.string());
           convert_image(img, w, h, data);
+          train_labels.push_back(labelId);
+          train_imgs.push_back(data);
+      }
+    }
+    BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(testPath), boost::filesystem::directory_iterator())) {
+        //if (is_directory(p)) continue;
+        BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
+          labelId = stoi(labelPath.filename().string());
+          auto img = cv::imread(imgPath.string());
 
-          random = (double)rand()/(double)RAND_MAX;
-          if (random < 0.7){
-            train_labels.push_back(label_id);
-            train_imgs.push_back(data);
-          }
-          else{
-            test_labels.push_back(label_id);
-            test_imgs.push_back(data);
-          }
-
+          convert_image(img, w, h, data);
+          test_labels.push_back(labelId);
+          test_imgs.push_back(data);
       }
     }
     std::cout << "loaded data" << std::endl;
@@ -84,25 +86,31 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using relu    = tiny_dnn::relu_layer;
   using softmax = tiny_dnn::softmax_layer;
 
-  const size_t n_fmaps  = 32;  // number of feature maps for upper layer
-  const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
-  const size_t n_fc     = 64;  // number of hidden units in fc layer
+  // nn << conv(patch_size, patch_size, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
+  //            backend_type)                      // C1
+  //    << pool(32, 32, n_fmaps, 2, backend_type)  // P2
+  //    << relu()                                  // activation
+  //    << conv(16, 16, 5, n_fmaps, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
+  //            backend_type)                      // C3
+  //    << pool(16, 16, n_fmaps, 2, backend_type)  // P4
+  //    << relu()                                  // activation
+  //    << conv(8, 8, 5, n_fmaps, n_fmaps2, tiny_dnn::padding::same, true, 1, 1,
+  //            backend_type)                                // C5
+  //    << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
+  //    << relu()                                            // activation
+  //    << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
+  //    << relu()                                            // activation
+  //    << fc(n_fc, 4, true, backend_type) << softmax(4);  // FC10
 
-  nn << conv(PATCH_SIZE, PATCH_SIZE, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
-             backend_type)                      // C1
-     << pool(32, 32, n_fmaps, 2, backend_type)  // P2
+  nn << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type)                      // C1
+     << pool(22, 22, 16, 2, backend_type)  // P2
      << relu()                                  // activation
-     << conv(16, 16, 5, n_fmaps, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
-             backend_type)                      // C3
-     << pool(16, 16, n_fmaps, 2, backend_type)  // P4
-     << relu()                                  // activation
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, tiny_dnn::padding::same, true, 1, 1,
-             backend_type)                                // C5
-     << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
+     << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type)                      // C3
+     << pool(8, 8, 32, 2, backend_type)  // P4
+     << relu()                                  // activation                                            // activation
+     << fc(4 * 4 * 32, 64, true, backend_type)    // FC7
      << relu()                                            // activation
-     << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
-     << relu()                                            // activation
-     << fc(n_fc, 4, true, backend_type) << softmax(4);  // FC10
+     << fc(64, 4, true, backend_type) << softmax(4);  // FC10
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";
@@ -127,7 +135,7 @@ void train_network(std::string data_dir_path,
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
 
-  load_data(data_dir_path, PATCH_SIZE, PATCH_SIZE, train_images, train_labels, test_images, test_labels);
+  load_data(data_dir_path, patch_size, patch_size, train_images, train_labels, test_images, test_labels);
 
   std::cout << "start learning" << std::endl;
 
