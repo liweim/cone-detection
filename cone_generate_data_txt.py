@@ -58,6 +58,7 @@ def generate_data_txt(data_path):
             if not resize_rate == 1:
                 img = imresize(img, resize_rate)
             mask = np.zeros(img.shape[:2]).astype(np.uint8)
+            
             xs = []
             ys = []
             for point in points[1:]:

@@ -154,7 +154,7 @@ void train_network(std::string data_dir_path,
               << t.elapsed() << "s elapsed." << std::endl;
     ++epoch;
     tiny_dnn::result res = nn.test(test_images, test_labels);
-    log << res.num_success << "/" << res.num_total << std::endl;
+    log << res.num_success << "/" << res.num_total << " = " << res.num_success/res.num_total*100.0 << "%" << std::endl;
 
     // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy>(train_images, train_values);
     // float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy>(test_images, test_values);

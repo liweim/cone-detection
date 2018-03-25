@@ -30,8 +30,8 @@ g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg
 export OMP_NUM_THREADS=4
 g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o train_efficient_sliding_window
 
-./train_efficient_sliding_window --data_path tmp/data_no_resize --epochs 200 --learning_rate 0.002 --minibatch_size 256
+./train_efficient_sliding_window --data_path tmp/data_no_resize --epochs 200 --learning_rate 0.002 --minibatch_size 64
 
 g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o efficient_sliding_window
 
-./efficient_sliding_window images/skidpad1 0.9
+./efficient_sliding_window images/skidpad1 0.7
