@@ -7,6 +7,8 @@
 */
 #include <iostream>
 #include <typeinfo>
+#include <fstream>
+#include <vector>
 
 #include "tiny_dnn/tiny_dnn.h"
 #include <opencv2/core/core.hpp>
@@ -18,6 +20,73 @@
 
 tiny_dnn::network<tiny_dnn::sequential> nn;
 
+void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
+  cv::Mat grayL, grayR;
+
+  cv::cvtColor(imgL, grayL, CV_BGR2GRAY);
+  cv::cvtColor(imgR, grayR, CV_BGR2GRAY);
+
+  cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(); 
+  sbm->setBlockSize(17);
+  sbm->setNumDisparities(32);
+
+  sbm->compute(grayL, grayR, disp);
+  cv::normalize(disp, disp, 0, 255, CV_MINMAX, CV_8U);
+}
+
+void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
+  cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
+    350.6847, 0, 332.4661,
+    0, 350.0606, 163.7461,
+    0, 0, 1);
+  cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.1674, 0.0158, 0.0057, 0, 0);
+  cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
+    351.9498, 0, 329.4456,
+    0, 351.0426, 179.0179,
+    0, 0, 1);
+  cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.1700, 0.0185, 0.0048, 0, 0);
+  cv::Mat R = (cv::Mat_<double>(3, 3) <<
+    0.9997, 0.0015, 0.0215,
+    -0.0015, 1, -0.00008,
+    -0.0215, 0.00004, 0.9997);
+  //cv::transpose(R, R);
+  cv::Mat T = (cv::Mat_<double>(3, 1) << -119.1807, 0.1532, 1.1225);
+
+  cv::Size stdSize = cv::Size(640, 360);
+  int width = img.cols;
+  int height = img.rows;
+  cv::Mat imgL(img, cv::Rect(0, 0, width/2, height));
+  cv::Mat imgR(img, cv::Rect(width/2, 0, width/2, height));
+
+  cv::resize(imgL, imgL, stdSize);
+  cv::resize(imgR, imgR, stdSize);
+
+  //std::cout << imgR.size() <<std::endl;
+
+  cv::Mat R1, R2, P1, P2;
+  cv::Rect validRoI[2];
+  cv::stereoRectify(mtxLeft, distLeft, mtxRight, distRight, stdSize, R, T, R1, R2, P1, P2, Q,
+    cv::CALIB_ZERO_DISPARITY, 0.0, stdSize, &validRoI[0], &validRoI[1]);
+
+  cv::Mat rmap[2][2];
+  cv::initUndistortRectifyMap(mtxLeft, distLeft, R1, P1, stdSize, CV_16SC2, rmap[0][0], rmap[0][1]);
+  cv::initUndistortRectifyMap(mtxRight, distRight, R2, P2, stdSize, CV_16SC2, rmap[1][0], rmap[1][1]);
+  cv::remap(imgL, imgL, rmap[0][0], rmap[0][1], cv::INTER_LINEAR);
+  cv::remap(imgR, imgR, rmap[1][0], rmap[1][1], cv::INTER_LINEAR);
+
+  //cv::imwrite("2_left.png", imgL);
+  //cv::imwrite("2_right.png", imgR);
+
+  blockMatching(disp, imgL, imgR);
+  // cv::namedWindow("disp", cv::WINDOW_NORMAL);
+  // cv::imshow("disp", disp);
+  // cv::waitKey(0);
+
+  rectified = imgL;
+
+  cv::reprojectImageTo3D(disp, XYZ, Q);
+  XYZ *= 0.001;
+}
 
 // rescale output to 0-100
 template <typename Activation>
@@ -78,7 +147,7 @@ std::vector <cv::Point> imRegionalMax(cv::Mat input, int nLocMax, double thresho
 {
     cv::Mat scratch = input.clone();
     // std::cout<<scratch<<std::endl;
-    cv::GaussianBlur(scratch, scratch, cv::Size(3,3), 0, 0);
+    // cv::GaussianBlur(scratch, scratch, cv::Size(3,3), 0, 0);
     std::vector <cv::Point> locations(0);
     locations.reserve(nLocMax); // Reserve place for fast access
     for (int i = 0; i < nLocMax; i++) {
@@ -237,21 +306,32 @@ void detectImg(const std::string &imgPath, double threshold) {
   int patchSize = 25;
   int patchRadius = int((patchSize-1)/2);
   int inputWidth = 320;
-  int heightUp = 85;
-  int heightDown = 140;
-  int inputHeight = 180; //heightDown-heightUp;
+  int heightUp = 90; //80;
+  int heightDown = 180; //140;
+  int inputHeight = heightDown-heightUp;
 
   int outputWidth  = inputWidth - (patchSize - 1);
   int outputHeight  = inputHeight - (patchSize - 1);
 
   cv::Rect roi;
   roi.x = 0;
-  roi.y = 0; //heightUp;
+  roi.y = heightUp;
   roi.width = inputWidth;
   roi.height = inputHeight;
   auto imgSource = cv::imread(imgPath);
-  cv::Mat img;
-  cv::resize(imgSource, img, cv::Size(320, 180));
+
+  cv::Mat Q, disp, rectified, XYZ, img;
+  reconstruction(imgSource, Q, disp, rectified, XYZ);
+
+  int index;
+  std::string filename, savePath;
+
+  index = imgPath.find_last_of('/');
+  filename = imgPath.substr(index+1);
+  savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
+  cv::imwrite(savePath, rectified);
+
+  cv::resize(rectified, img, cv::Size(320, 180));
   auto patchImg = img(roi);
 
   // convert imagefile to vec_t
@@ -265,11 +345,12 @@ void detectImg(const std::string &imgPath, double threshold) {
   for (int c = 0; c < 4; ++c)
     for (int y = 0; y < outputHeight; ++y)
       for (int x = 0; x < outputWidth; ++x)
-         probMap.at<cv::Vec4d>(y, x)[c] = prob[c * outputWidth * outputHeight + y * outputWidth + x];
-
+        probMap.at<cv::Vec4d>(y, x)[c] = prob[c * outputWidth * outputHeight + y * outputWidth + x];
+         
   cv::Vec4d probSoftmax(4);
   cv::Mat probMapSoftmax = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
   cv::Mat probMapIndex = cv::Mat::zeros(outputHeight, outputWidth, CV_32S);
+  cv::Mat probMapSplit[3] = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
   for (int y = 0; y < outputHeight; ++y){
     for (int x = 0; x < outputWidth; ++x){
       softmax(probMap.at<cv::Vec4d>(y, x), probSoftmax);
@@ -277,46 +358,69 @@ void detectImg(const std::string &imgPath, double threshold) {
         if(probSoftmax[c+1] > threshold){
           probMapSoftmax.at<double>(y, x) = probSoftmax[c+1];
           probMapIndex.at<int>(y, x) = c+1;
+          probMapSplit[c].at<double>(y, x) = probSoftmax[c+1];
         }
     }
   }
 
   std::vector <cv::Point> cone;
-  cv::Point position, positionShift = cv::Point(patchRadius, patchRadius);//+heightUp);
+  cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
   int label;
-  cone = imRegionalMax(probMapSoftmax, 10, threshold, patchSize);
+  cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
   if (cone.size()>0){
     for(size_t i=0; i<cone.size(); i++){
-      position = cone[i] + positionShift;
+      position = (cone[i] + positionShift)*2;
       label = probMapIndex.at<int>(cone[i]);
       if (label == 1){
-        cv::circle(img, position, 1, {0, 255, 255}, -1);
+        cv::circle(rectified, position, 1, {255, 0, 0}, -1);
       }
       if (label == 2){
-        cv::circle(img, position, 1, {255, 0, 0}, -1);
+        cv::circle(rectified, position, 1, {0, 255, 255}, -1);
       }
       if (label == 3){
-        cv::circle(img, position, 1, {0, 0, 255}, -1);
+        cv::circle(rectified, position, 1, {0, 0, 255}, -1);
       }
     }
   }
-  int index = imgPath.find_last_of('/');
-  std::string savePath(imgPath.substr(index+1));
-  cv::namedWindow("img", cv::WINDOW_NORMAL);
-  cv::imshow("img", img);
+  
+  index = imgPath.find_last_of('/');
+  filename = imgPath.substr(index+1);
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename;
+
+  // cv::namedWindow("probMapSoftmax", cv::WINDOW_NORMAL);
+  // cv::imshow("probMapSoftmax", probMapSoftmax);
+  // cv::namedWindow("img", cv::WINDOW_NORMAL);
+  // cv::imshow("img", rectified);
+  // cv::waitKey(0);
+
+  cv::namedWindow("rectified", cv::WINDOW_NORMAL);
+  cv::imshow("rectified", rectified);
+  cv::namedWindow("0", cv::WINDOW_NORMAL);
+  cv::imshow("0", probMapSplit[0]);
+  cv::namedWindow("1", cv::WINDOW_NORMAL);
+  cv::imshow("1", probMapSplit[1]);
+  cv::namedWindow("2", cv::WINDOW_NORMAL);
+  cv::imshow("2", probMapSplit[2]);
   cv::waitKey(0);
-  // cv::imwrite("result/"+savePath, imgSource);
+
+  // std::cout << savePath << std::endl;
+  cv::imwrite(savePath, rectified);
 }
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
-  constructNetwork(modelPath, 320, 180);//55);
+  constructNetwork(modelPath, 320, 90);
   boost::filesystem::path dpath(imgFolderPath);
   BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
     std::cout << imgPath.string() << std::endl;
-    detectImg(imgPath.string(), threshold);
+    
+    auto startTime = std::chrono::system_clock::now();
+	detectImg(imgPath.string(), threshold);
+	auto endTime = std::chrono::system_clock::now();
+	std::chrono::duration<double> diff = endTime-startTime;
+	std::cout << "Time: " << diff.count() << " s\n";
   }
 }
 
 int main(int argc, char **argv) {
-  detectAllImg("models/efficientSlidingWindow", argv[1], atof(argv[2]));
+  detectAllImg(argv[1], argv[2], atof(argv[3]));
 }

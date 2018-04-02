@@ -137,7 +137,7 @@ void train_network(std::string data_dir_path,
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
 
-  load_data(data_dir_path, input_size, input_size, train_images, train_labels, test_images, test_labels);
+  load_data("tmp/"+data_dir_path, input_size, input_size, train_images, train_labels, test_images, test_labels);
 
   std::cout << "start learning" << std::endl;
 
@@ -154,14 +154,14 @@ void train_network(std::string data_dir_path,
               << t.elapsed() << "s elapsed." << std::endl;
     ++epoch;
     tiny_dnn::result res = nn.test(test_images, test_labels);
-    log << res.num_success << "/" << res.num_total << " = " << res.num_success/res.num_total*100.0 << "%" << std::endl;
+    log << res.num_success << "/" << res.num_total << " = " << 100.0*res.num_success/res.num_total << "%" << std::endl;
 
     // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy>(train_images, train_values);
     // float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy>(test_images, test_values);
     // std::cout << "Training loss: " << loss_train << ", " << "validation loss: " << loss_val << std::endl;
     if(num_success < res.num_success){
       num_success = res.num_success;
-      std::ofstream ofs ("models/efficientSlidingWindow");
+      std::ofstream ofs ("models/"+data_dir_path);
       ofs << nn;
     }
 

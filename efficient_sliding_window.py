@@ -140,7 +140,7 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
             x = int(x/resize_rate+up_limit)
             y = int(y/resize_rate)
             cones.append([y, x, i_class])
-            cv2.circle(img_source, (y, x), 1, color[i_class], -1)
+            cv2.circle(img_source, (y, x), 2, color[i_class], -1)
 
     # for i_class in range(num_class):
     #     mask = prob_map[:, :, i_class]

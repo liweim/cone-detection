@@ -39,7 +39,7 @@ def generate_data_txt(data_path):
     os.mkdir(join(data_path, 'test'))
 
     global_back_area = 0
-    model_ids = ['background', 'yellow', 'blue', 'orange']
+    model_ids = ['background', 'blue', 'yellow', 'orange']
     for label, model_id in enumerate(model_ids):
         os.mkdir(join(data_path, 'train', str(label)))
         os.mkdir(join(data_path, 'test', str(label)))
