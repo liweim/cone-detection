@@ -37,7 +37,7 @@ def augmentation(img):
         img = cv2.resize(img, (patch_size, patch_size))
     return img
 
-def generate_data_xml(annotation_paths, data_path, no_resize):
+def generate_data_xml(annotation_paths, data_path, efficient):
     if os.path.exists(data_path):
         rmtree(data_path)
     # os.mkdir(data_path)
@@ -156,7 +156,7 @@ def generate_data_xml(annotation_paths, data_path, no_resize):
             for x, y, label, ratio in cones:
                 patch_radius = int(radius * ratio)
                 roi_radius = int(factor100 * ratio)
-                if no_resize:
+                if efficient:
                     patch_radius = radius
                 for c in range(max(x-roi_radius,patch_radius), min(x+roi_radius,col-patch_radius)):
                     for r in range(max(y-roi_radius,patch_radius), min(y+roi_radius,row-patch_radius)):
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--annotation_paths', nargs='+')
     parser.add_argument('--data_path', type=str)
-    parser.add_argument('--no_resize', type=int)
+    parser.add_argument('--efficient', type=int)
     args = parser.parse_args()
 
-    generate_data_xml(annotation_paths = args.annotation_paths, data_path = args.data_path, no_resize = args.no_resize)
+    generate_data_xml(annotation_paths = args.annotation_paths, data_path = args.data_path, efficient = args.efficient)

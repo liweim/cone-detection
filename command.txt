@@ -3,7 +3,7 @@ python3 cone_annotate_region.py --mode 1 --img_path annotations/skidpad1/1513418
 
 python3 annotation_triangle.py
 
-python3 cone_generate_data_xml.py --annotation_paths annotations/sunny/rectified annotations/snowy/rectified --data_path tmp/sunny_no_resize --no_resize 1
+python3 cone_generate_data_xml.py --annotation_paths annotations/sunny/rectified annotations/snowy/rectified --data_path tmp/all --efficient 0
 
 python3 cone_generate_data_txt.py --data_path data_center_resize
 
@@ -21,7 +21,7 @@ python3 cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path m
 
 g++ train_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o train_sliding_window
 
-./train_sliding_window --data_path tmp/data_resize --epochs 50
+./train_sliding_window --data_path all --epochs 200 --learning_rate 0.002 --minibatch_size 64
 
 g++ sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o sliding_window
 
@@ -32,9 +32,9 @@ g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg
 export OMP_NUM_THREADS=4
 g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o train_efficient_sliding_window
 
-./train_efficient_sliding_window --data_path all_no_resize --epochs 200 --learning_rate 0.002 --minibatch_size 64
+./train_efficient_sliding_window --data_path all_efficient --epochs 200 --learning_rate 0.002 --minibatch_size 64
 
 g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o efficient_sliding_window
 
 ./efficient_sliding_window images/skidpad1 0.7
-./efficient_sliding_window models/all_no_resize annotations/sunny/images 0.7
+./efficient_sliding_window models/all_efficient annotations/sunny/images 0.7

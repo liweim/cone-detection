@@ -78,9 +78,10 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   //cv::imwrite("2_right.png", imgR);
 
   blockMatching(disp, imgL, imgR);
-  // cv::namedWindow("disp", cv::WINDOW_NORMAL);
-  // cv::imshow("disp", disp);
-  // cv::waitKey(0);
+
+  cv::namedWindow("disp", cv::WINDOW_NORMAL);
+  cv::imshow("disp", disp);
+  cv::waitKey(0);
 
   rectified = imgL;
 
@@ -367,6 +368,13 @@ void detectImg(const std::string &imgPath, double threshold) {
   cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
   int label;
   cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
+
+  // std::ofstream savefile;
+  // int index2 = filename.find_last_of('.');
+  // savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
+  // std::cout << savePath << std::endl;
+  // savefile.open(savePath);
+  cv::Vec3f point3D;
   if (cone.size()>0){
     for(size_t i=0; i<cone.size(); i++){
       position = (cone[i] + positionShift)*2;
@@ -380,13 +388,13 @@ void detectImg(const std::string &imgPath, double threshold) {
       if (label == 3){
         cv::circle(rectified, position, 1, {0, 0, 255}, -1);
       }
+      point3D = XYZ.at<cv::Vec3f>(position);
+      std::cout << position << " " << label << " " << point3D << std::endl;
+      // savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+std::to_string(label)+","+std::to_string(point3D[0])+","+std::to_string(point3D[1])+","+std::to_string(point3D[2])+"\n"; 
     }
   }
+  // savefile.close();
   
-  index = imgPath.find_last_of('/');
-  filename = imgPath.substr(index+1);
-  savePath = imgPath.substr(0,index-7)+"/results/"+filename;
-
   // cv::namedWindow("probMapSoftmax", cv::WINDOW_NORMAL);
   // cv::imshow("probMapSoftmax", probMapSoftmax);
   // cv::namedWindow("img", cv::WINDOW_NORMAL);
@@ -403,8 +411,9 @@ void detectImg(const std::string &imgPath, double threshold) {
   cv::imshow("2", probMapSplit[2]);
   cv::waitKey(0);
 
-  // std::cout << savePath << std::endl;
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename;
   cv::imwrite(savePath, rectified);
+  // std::cout << savePath << std::endl;
 }
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
