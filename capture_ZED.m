@@ -1,18 +1,18 @@
 clear all;close all;clc;
 
 % Open the ZED
-zed = webcam('ZED')
+zed = webcam('ZED');
 % Set video resolution
-zed.Resolution = zed.AvailableResolutions{1};
+%zed.Resolution = zed.AvailableResolutions{1};
 % Get image size
-[height width channels] = size(snapshot(zed));
-
+%[height width channels] = size(snapshot(zed));
+%%
 % Create Figure and wait for keyboard interrupt to quit
 f = figure('name','ZED camera','keypressfcn','close','windowstyle','modal');
 ok = 1;
 n=0;
 % Start loop
-while n < 10 && ok
+while n < 300 && ok
       n=n+1;
       % Capture the current image
       img = snapshot(zed);
@@ -32,10 +32,8 @@ while n < 10 && ok
 %       imshow(image_right);
 %       title('Image Right');
 
-        if mod(n,2) == 0
-          imwrite(img,strcat('stereo/',num2str(n),'.png'));
+          imwrite(img,strcat('annotations/rainy2/',num2str(n),'.png'));
           imshow(img);
-        end
         
       drawnow;
 

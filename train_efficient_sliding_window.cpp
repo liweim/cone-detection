@@ -20,20 +20,58 @@
 
 int input_size = 25;
 
+// void convert_image(cv::Mat img,
+//                    int w,
+//                    int h,
+//                    tiny_dnn::vec_t& data){
+
+//   cv::Mat resized, hsv[3];
+//   cv::resize(img, resized, cv::Size(w, h));
+//   cv::cvtColor(resized, resized, CV_RGB2HSV);
+ 
+//   data.resize(w * h * 3);
+//   for (size_t y = 0; y < h; ++y) {
+//     for (size_t x = 0; x < w; ++x) {
+//       data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]) / 179.0;
+//       data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]) / 255.0;
+//       data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]) / 255.0;
+//     }
+//   }
+// }
+
+// void convert_image(cv::Mat img,
+//                    int w,
+//                    int h,
+//                    tiny_dnn::vec_t& data){
+
+//   cv::Mat resized;
+//   cv::resize(img, resized, cv::Size(w, h));
+//   data.resize(w * h * 3);
+//   for (size_t c = 0; c < 3; ++c) {
+//     for (size_t y = 0; y < h; ++y) {
+//       for (size_t x = 0; x < w; ++x) {
+//         data[c * w * h + y * w + x] =
+//           resized.at<cv::Vec3b>(y, x)[c] / 255.0;
+//       }
+//     }
+//   }
+// }
+
 void convert_image(cv::Mat img,
                    int w,
                    int h,
                    tiny_dnn::vec_t& data){
 
-  cv::Mat resized;
+  cv::Mat resized, hsv[3];
   cv::resize(img, resized, cv::Size(w, h));
+  cv::cvtColor(resized, resized, CV_RGB2HSV);
+ 
   data.resize(w * h * 3);
-  for (size_t c = 0; c < 3; ++c) {
-    for (size_t y = 0; y < h; ++y) {
-      for (size_t x = 0; x < w; ++x) {
-        data[c * w * h + y * w + x] =
-          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
-      }
+  for (size_t y = 0; y < h; ++y) {
+    for (size_t x = 0; x < w; ++x) {
+      data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]-75) / 179.0;
+      data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]-46) / 255.0;
+      data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]-107) / 255.0;
     }
   }
 }
@@ -44,34 +82,42 @@ void load_data(const std::string& directory,
                     int h,
                     std::vector<tiny_dnn::vec_t>& train_imgs,
                     std::vector<tiny_dnn::label_t>& train_labels,
+                    std::vector<tiny_dnn::vec_t>& train_values,
                     std::vector<tiny_dnn::vec_t>& test_imgs,
-                    std::vector<tiny_dnn::label_t>& test_labels)
+                    std::vector<tiny_dnn::label_t>& test_labels,
+                    std::vector<tiny_dnn::vec_t>& test_values)
 {
     boost::filesystem::path trainPath(directory+"/train");
     boost::filesystem::path testPath(directory+"/test");
-    int labelId;
+    int label;
 
-    tiny_dnn::vec_t data;
+    tiny_dnn::vec_t data, value;
 
     BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(trainPath), boost::filesystem::directory_iterator())) {
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
-          labelId = stoi(labelPath.filename().string());
+          label = stoi(labelPath.filename().string());
+          value = {0,0,0,0};
+          value[label] = 1;
           auto img = cv::imread(imgPath.string());
 
           convert_image(img, w, h, data);
-          train_labels.push_back(labelId);
+          train_values.push_back(value);
+          train_labels.push_back(label);
           train_imgs.push_back(data);
       }
     }
     BOOST_FOREACH(const boost::filesystem::path& labelPath, std::make_pair(boost::filesystem::directory_iterator(testPath), boost::filesystem::directory_iterator())) {
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
-          labelId = stoi(labelPath.filename().string());
+          label = stoi(labelPath.filename().string());
+          value = {0,0,0,0};
+          value[label] = 1;
           auto img = cv::imread(imgPath.string());
 
           convert_image(img, w, h, data);
-          test_labels.push_back(labelId);
+          test_values.push_back(value);
+          test_labels.push_back(label);
           test_imgs.push_back(data);
       }
     }
@@ -102,14 +148,27 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   //    << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
   //    << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
-  nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     // << dropout((input_size-12)*(input_size-12)*16, 0.25)
-     << conv(input_size-12, input_size-12, 5, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     // << dropout((input_size-20)*(input_size-20)*32, 0.25)
+  // nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    // << dropout((input_size-12)*(input_size-12)*16, 0.25)
+  //    << conv(input_size-12, input_size-12, 5, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    // << dropout((input_size-20)*(input_size-20)*32, 0.25)
+  //    << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-22, input_size-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+
+  nn << conv(input_size, input_size, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-4, input_size-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-8)*(input_size-8)*8, 0.25)
+     << conv(input_size-8, input_size-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-12, input_size-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-16)*(input_size-16)*16, 0.25)
+     << conv(input_size-16, input_size-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-18, input_size-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << dropout((input_size-20)*(input_size-20)*32, 0.25)
      << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
      << conv(input_size-22, input_size-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";
@@ -134,10 +193,10 @@ void train_network(std::string data_dir_path,
   // std::ifstream ifs("efficient_sliding_window");
   // ifs >> nn;
 
+  std::vector<tiny_dnn::vec_t> train_values, test_values, train_images, test_images;
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
-  std::vector<tiny_dnn::vec_t> train_images, test_images;
 
-  load_data("tmp/"+data_dir_path, input_size, input_size, train_images, train_labels, test_images, test_labels);
+  load_data("tmp/"+data_dir_path, input_size, input_size, train_images, train_labels, train_values, test_images, test_labels, test_values);
 
   std::cout << "start learning" << std::endl;
 
@@ -147,20 +206,22 @@ void train_network(std::string data_dir_path,
   optimizer.alpha *= static_cast<float_t>(sqrt(n_minibatch) * learning_rate);
 
   int epoch = 1;
-  int num_success = 0;
+  int loss_val_temp = 10000;
   // create callback
   auto on_enumerate_epoch = [&]() {
     std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
               << t.elapsed() << "s elapsed." << std::endl;
     ++epoch;
-    tiny_dnn::result res = nn.test(test_images, test_labels);
-    log << res.num_success << "/" << res.num_total << " = " << 100.0*res.num_success/res.num_total << "%" << std::endl;
+    tiny_dnn::result train_res = nn.test(train_images, train_labels);
+    float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(train_images, train_values);
+    log << "Training accuracy: " << train_res.num_success << "/" << train_res.num_total << " = " << 100.0*train_res.num_success/train_res.num_total << "%, loss: " << loss_train << std::endl;
 
-    // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy>(train_images, train_values);
-    // float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy>(test_images, test_values);
-    // std::cout << "Training loss: " << loss_train << ", " << "validation loss: " << loss_val << std::endl;
-    if(num_success < res.num_success){
-      num_success = res.num_success;
+    tiny_dnn::result test_res = nn.test(test_images, test_labels);
+    float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(test_images, test_values);
+    log << "Validation accuracy: " <<test_res.num_success << "/" << test_res.num_total << " = " << 100.0*test_res.num_success/test_res.num_total << "%, loss: " << loss_val << std::endl;
+    
+    if(loss_val < loss_val_temp){
+      loss_val_temp = loss_val;
       std::ofstream ofs ("models/"+data_dir_path);
       ofs << nn;
     }
@@ -172,7 +233,7 @@ void train_network(std::string data_dir_path,
   auto on_enumerate_minibatch = [&]() { disp += n_minibatch; };
 
   // training
-  nn.train<tiny_dnn::cross_entropy>(optimizer, train_images, train_labels,
+  nn.fit<tiny_dnn::cross_entropy_multiclass>(optimizer, train_images, train_values,
                                     n_minibatch, n_train_epochs,
                                     on_enumerate_minibatch, on_enumerate_epoch);
 
@@ -207,7 +268,7 @@ int main(int argc, char **argv) {
   int epochs                             = 5;
   std::string data_path                       = "";
   int minibatch_size                     = 32;
-  tiny_dnn::core::backend_t backend_type = tiny_dnn::core::backend_t::avx;
+  tiny_dnn::core::backend_t backend_type = parse_backend_name("internal");
 
   if (argc == 2) {
     std::string argname(argv[1]);

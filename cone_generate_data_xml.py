@@ -48,6 +48,7 @@ def generate_data_xml(annotation_paths, data_path, efficient):
 
     count0 = 0
     column_name = ['x', 'y', 'ratio', 'label']
+    train_imgs = []
     for annotation_path in annotation_paths:
         xml_path = join(annotation_path, '*.xml')
         for xml_file in glob.glob(xml_path):
@@ -58,7 +59,10 @@ def generate_data_xml(annotation_paths, data_path, efficient):
 
             img = cv2.imread(img_path)
             img = imresize(img, 1.0*resize_rate)
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
             mask_img = np.copy(img)
+
             # mask_img = np.random.random_integers(0, 255, img.shape).astype(np.uint8)
             # mask_img = np.zeros(img.shape).astype(np.uint8)
             row, col = img.shape[:2]
@@ -110,14 +114,14 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                 max_length = max(abs(x2-x1), abs(y2-y1)) * 1.5
                 ratio = max_length/patch_size
                 # mask_img[y1:y2+1,x1:x2+1] = img[y1:y2+1,x1:x2+1]
-                tmp = 1.5*ratio
-                for r in range(max(0,int(y-3*ratio)),min(row,int(y+1*ratio)+1)):
-                    tmp += 1/4
-                    for c in range(max(0,int(x-tmp)+1),min(col,int(x+tmp)+1)):
-                        mask_img[r, c] = [choice(range(256)), choice(range(256)), choice(range(256))]
+                # tmp = 1.5*ratio
+                # for r in range(max(0,int(y-3*ratio)),min(row,int(y+1*ratio)+1)):
+                #     tmp += 1/4
+                #     for c in range(max(0,int(x-tmp)+1),min(col,int(x+tmp)+1)):
+                #         mask_img[r, c] = [choice(range(256)), choice(range(256)), choice(range(256))]
                 # print(ratio)
-                # if ratio > 0.5:
-                cones.append([x, y, label, ratio])
+                if ratio > 0.5:
+                    cones.append([x, y, label, ratio])
                     # cv2.circle(mask, (x, y), int(factor100*ratio), 100, -1)
 
             txt_path = basename+'.csv'
@@ -183,6 +187,8 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                             if mask[r,c] == 255:
                                 path = join(path, '3')
                         if flag:
+                            if os.path.split(os.path.split(path)[0])[1] == 'train':
+                                train_imgs.append(image)
                             num = len(os.listdir(path))
                             cv2.imwrite(join(path, str(num)+'.png'), image)
 
@@ -201,6 +207,7 @@ def generate_data_xml(annotation_paths, data_path, efficient):
             if random() < 0.7:
                 image = augmentation(image)
                 path = join(data_path, 'train', '0')
+                train_imgs.append(image)
             else:
                 path = join(data_path, 'test', '0')
             num = len(os.listdir(path))
@@ -209,6 +216,11 @@ def generate_data_xml(annotation_paths, data_path, efficient):
     for i in range(4):
         path = join(data_path, 'train', str(i))
         print('{}: {}'.format(classes[i], len(os.listdir(path))))
+
+    train_imgs = np.array(train_imgs)
+    print(np.mean(train_imgs[:,:,:,0]))
+    print(np.mean(train_imgs[:,:,:,1]))
+    print(np.mean(train_imgs[:,:,:,2]))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
