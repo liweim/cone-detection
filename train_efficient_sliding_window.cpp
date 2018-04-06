@@ -129,44 +129,44 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using conv    = tiny_dnn::convolutional_layer;
   using pool    = tiny_dnn::max_pooling_layer;
   using fc      = tiny_dnn::fully_connected_layer;
-  using relu    = tiny_dnn::relu_layer;
+  using tanh    = tiny_dnn::tanh_layer;
   using softmax = tiny_dnn::softmax_layer;
   using dropout = tiny_dnn::dropout_layer;
 
-  // nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  // nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << dropout((input_size-12)*(input_size-12)*16, 0.25)
-  //    << conv(input_size-12, input_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-18, input_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-12, input_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(input_size-18, input_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << dropout((input_size-24)*(input_size-24)*16, 0.25)
-  //    << conv(input_size-24, input_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-28, input_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-24, input_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(input_size-28, input_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << dropout((input_size-32)*(input_size-32)*16, 0.25)
-  //    << conv(input_size-32, input_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-36, input_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-32, input_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(input_size-36, input_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << dropout((input_size-40)*(input_size-40)*16, 0.25)
-  //    << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-40, input_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << conv(input_size-42, input_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
-  // nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  // nn << conv(input_size, input_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(input_size-6, input_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    // << dropout((input_size-12)*(input_size-12)*16, 0.25)
-  //    << conv(input_size-12, input_size-12, 5, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-  //    << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-12, input_size-12, 5, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(input_size-16, input_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    // << dropout((input_size-20)*(input_size-20)*32, 0.25)
-  //    << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  //    << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << conv(input_size-22, input_size-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
-  nn << conv(input_size, input_size, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-4, input_size-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+  nn << conv(input_size, input_size, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(input_size-4, input_size-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << dropout((input_size-8)*(input_size-8)*8, 0.25)
-     << conv(input_size-8, input_size-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-12, input_size-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-8, input_size-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(input_size-12, input_size-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << dropout((input_size-16)*(input_size-16)*16, 0.25)
-     << conv(input_size-16, input_size-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
-     << conv(input_size-18, input_size-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-16, input_size-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(input_size-18, input_size-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << dropout((input_size-20)*(input_size-20)*32, 0.25)
-     << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()
+     << conv(input_size-20, input_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << conv(input_size-22, input_size-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
 
 
@@ -212,14 +212,19 @@ void train_network(std::string data_dir_path,
     std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
               << t.elapsed() << "s elapsed." << std::endl;
     ++epoch;
-    tiny_dnn::result train_res = nn.test(train_images, train_labels);
-    float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(train_images, train_values);
-    log << "Training accuracy: " << train_res.num_success << "/" << train_res.num_total << " = " << 100.0*train_res.num_success/train_res.num_total << "%, loss: " << loss_train << std::endl;
+    // tiny_dnn::result train_res = nn.test(train_images, train_labels);
+    // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(train_images, train_values);
+    // log << "Training accuracy: " << train_res.num_success << "/" << train_res.num_total << " = " << 100.0*train_res.num_success/train_res.num_total << "%, loss: " << loss_train << std::endl;
 
     tiny_dnn::result test_res = nn.test(test_images, test_labels);
     float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(test_images, test_values);
     log << "Validation accuracy: " <<test_res.num_success << "/" << test_res.num_total << " = " << 100.0*test_res.num_success/test_res.num_total << "%, loss: " << loss_val << std::endl;
     
+    if(loss_val < 0){
+      log << "Training crash!" << std::endl;
+      return;
+    }
+
     if(loss_val < loss_val_temp){
       loss_val_temp = loss_val;
       std::ofstream ofs ("models/"+data_dir_path);
