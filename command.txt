@@ -21,7 +21,7 @@ python3 cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path m
 
 g++ train_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -mavx -o train_sliding_window
 
-./train_sliding_window --data_path all --epochs 100 --learning_rate 0.005 --minibatch_size 128
+./train_sliding_window all all_hsv_rm 0.005 300 128
 
 g++ sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o sliding_window
 
@@ -30,9 +30,12 @@ g++ sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs -
 export OMP_NUM_THREADS=4
 g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o train_efficient_sliding_window
 
-./train_efficient_sliding_window --data_path all_efficient --epochs 100 --learning_rate 0.005 --minibatch_size 128
+./train_efficient_sliding_window all_efficient all_efficient_hsv_rm 0.005 300 128
+
+g++ test_model.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o test_model
+
+./test_model all_efficient all_efficient
 
 g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o efficient_sliding_window
 
-./efficient_sliding_window images/skidpad1 0.7
-./efficient_sliding_window models/all_efficient annotations/sunny/images 0.7
+./efficient_sliding_window models/all_efficient_hsv_rm_0.95 annotations/rainy/images 0.9

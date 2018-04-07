@@ -20,23 +20,23 @@
 
 int patch_size = 25;
 
-// void convert_image(cv::Mat img,
-//                    int w,
-//                    int h,
-//                    tiny_dnn::vec_t& data){
+void convert_image(cv::Mat img,
+                   int w,
+                   int h,
+                   tiny_dnn::vec_t& data){
 
-//   cv::Mat resized;
-//   cv::resize(img, resized, cv::Size(w, h));
-//   data.resize(w * h * 3);
-//   for (size_t c = 0; c < 3; ++c) {
-//     for (size_t y = 0; y < h; ++y) {
-//       for (size_t x = 0; x < w; ++x) {
-//         data[c * w * h + y * w + x] =
-//           resized.at<cv::Vec3b>(y, x)[c] / 255.0;
-//       }
-//     }
-//   }
-// }
+  cv::Mat resized;
+  cv::resize(img, resized, cv::Size(w, h));
+  data.resize(w * h * 3);
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t y = 0; y < h; ++y) {
+      for (size_t x = 0; x < w; ++x) {
+        data[c * w * h + y * w + x] =
+          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
+      }
+    }
+  }
+}
 
 // void convert_image(cv::Mat img,
 //                    int w,
@@ -57,24 +57,24 @@ int patch_size = 25;
 //   }
 // }
 
-void convert_image(cv::Mat img,
-                   int w,
-                   int h,
-                   tiny_dnn::vec_t& data){
+// void convert_image(cv::Mat img,
+//                    int w,
+//                    int h,
+//                    tiny_dnn::vec_t& data){
 
-  cv::Mat resized, hsv[3];
-  cv::resize(img, resized, cv::Size(w, h));
-  cv::cvtColor(resized, resized, CV_RGB2HSV);
+//   cv::Mat resized, hsv[3];
+//   cv::resize(img, resized, cv::Size(w, h));
+//   cv::cvtColor(resized, resized, CV_RGB2HSV);
  
-  data.resize(w * h * 3);
-  for (size_t y = 0; y < h; ++y) {
-    for (size_t x = 0; x < w; ++x) {
-      data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]) / 179.0;
-      data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]) / 255.0;
-      data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]) / 255.0;
-    }
-  }
-}
+//   data.resize(w * h * 3);
+//   for (size_t y = 0; y < h; ++y) {
+//     for (size_t x = 0; x < w; ++x) {
+//       data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]) / 179.0;
+//       data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]) / 255.0;
+//       data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]) / 255.0;
+//     }
+//   }
+// }
 
 // convert all images found in directory to vec_t
 void load_data(const std::string& directory,
@@ -129,35 +129,37 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using conv    = tiny_dnn::convolutional_layer;
   using pool    = tiny_dnn::max_pooling_layer;
   using fc      = tiny_dnn::fully_connected_layer;
-  using relu    = tiny_dnn::relu_layer;
   using tanh    = tiny_dnn::tanh_layer;
   using leaky_relu    = tiny_dnn::leaky_relu_layer;
   using softmax = tiny_dnn::softmax_layer;
+  using dropout = tiny_dnn::dropout_layer;
 
   // nn << conv(32, 32, 5, 3, 16, tiny_dnn::padding::same, true, 1, 1, backend_type)    
-  //    << pool(32, 32, 16, 2, backend_type)  << relu()   
+  //    << pool(32, 32, 16, 2, backend_type)  << tanh()   
   //    << conv(16, 16, 5, 16, 32, tiny_dnn::padding::same, true, 1, 1, backend_type)                      
-  //    << pool(16, 16, 32, 2, backend_type) << relu()                                  
+  //    << pool(16, 16, 32, 2, backend_type) << tanh()                                  
   //    << conv(8, 8, 5, 32, 32, tiny_dnn::padding::same, true, 1, 1, backend_type)                                
-  //    << pool(8, 8, 32, 2, backend_type) << relu()                                            
-  //    << fc(4 * 4 * 32, 128, true, backend_type) << relu()                                            
+  //    << pool(8, 8, 32, 2, backend_type) << tanh()                                            
+  //    << fc(4 * 4 * 32, 128, true, backend_type) << tanh()                                            
   //    << fc(128, 4, true, backend_type) << softmax(4);  
 
-  // nn << conv(32, 32, 5, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()    
+  // nn << conv(32, 32, 5, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()    
   //    << pool(28, 28, 16, 2, backend_type)   
-  //    << conv(14, 14, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()                      
+  //    << conv(14, 14, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()                      
   //    << pool(12, 12, 32, 2, backend_type)                                  
-  //    << conv(6, 6, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()                                
+  //    << conv(6, 6, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()                                
   //    << pool(4, 4, 32, 2, backend_type)                                            
-  //    << fc(2 * 2 * 32, 128, true, backend_type) << relu()                                            
+  //    << fc(2 * 2 * 32, 128, true, backend_type) << tanh()                                            
   //    << fc(128, 4, true, backend_type) << softmax(4); 
 
-  nn << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()                     
+  nn << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
+     << dropout(22*22*16, 0.25)                    
      << pool(22, 22, 16, 2, backend_type)                               
-     << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()                     
+     << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
+     << dropout(8*8*32, 0.25)                    
      << pool(8, 8, 32, 2, backend_type)
-     // << conv(4, 4, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << relu()                                                                        
-     // << fc(2 * 2 * 64, 128, true, backend_type) << leaky_relu()  
+     // << conv(4, 4, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()                                                                        
+     // << fc(2 * 2 * 64, 128, true, backend_type) << leaky_tanh()  
      << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
      << fc(128, 4, true, backend_type) << softmax(4); 
 
@@ -169,22 +171,24 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
     }
 }
 
-void train_network(std::string data_dir_path,
+void train_network(std::string data_path,
+                   std::string model_path,
                    double learning_rate,
-                   const int n_train_epochs,
-                   const int n_minibatch,
-                   tiny_dnn::core::backend_t backend_type,
-                   std::ostream &log) {
+                   int n_train_epochs,
+                   int n_minibatch) {
   // specify loss-function and learning strategy
   tiny_dnn::network<tiny_dnn::sequential> nn;
   tiny_dnn::adam optimizer;
 
-  construct_net(nn, backend_type);
+  construct_net(nn, tiny_dnn::core::backend_t::internal);
+
+  // std::ifstream ifs("efficient_sliding_window");
+  // ifs >> nn;
 
   std::vector<tiny_dnn::vec_t> train_values, test_values, train_images, test_images;
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
 
-  load_data("tmp/"+data_dir_path, input_size, input_size, train_images, train_labels, train_values, test_images, test_labels, test_values);
+  load_data("tmp/"+data_path, patch_size, patch_size, train_images, train_labels, train_values, test_images, test_labels, test_values);
 
   std::cout << "start learning" << std::endl;
 
@@ -200,17 +204,22 @@ void train_network(std::string data_dir_path,
     std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
               << t.elapsed() << "s elapsed." << std::endl;
     ++epoch;
-    tiny_dnn::result train_res = nn.test(train_images, train_labels);
-    float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(train_images, train_values);
-    log << "Training accuracy: " << train_res.num_success << "/" << train_res.num_total << " = " << 100.0*train_res.num_success/train_res.num_total << "%, loss: " << loss_train << std::endl;
+    // tiny_dnn::result train_res = nn.test(train_images, train_labels);
+    // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(train_images, train_values);
+    // std::cout << "Training accuracy: " << train_res.num_success << "/" << train_res.num_total << " = " << 100.0*train_res.num_success/train_res.num_total << "%, loss: " << loss_train << std::endl;
 
     tiny_dnn::result test_res = nn.test(test_images, test_labels);
     float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(test_images, test_values);
-    log << "Validation accuracy: " <<test_res.num_success << "/" << test_res.num_total << " = " << 100.0*test_res.num_success/test_res.num_total << "%, loss: " << loss_val << std::endl;
+    std::cout << "Validation accuracy: " <<test_res.num_success << "/" << test_res.num_total << " = " << 100.0*test_res.num_success/test_res.num_total << "%, loss: " << loss_val << std::endl;
     
+    if(loss_val < 0){
+      std::cout << "Training crash!" << std::endl;
+      return;
+    }
+
     if(loss_val < loss_val_temp){
       loss_val_temp = loss_val;
-      std::ofstream ofs ("models/"+data_dir_path);
+      std::ofstream ofs ("models/"+model_path);
       ofs << nn;
     }
 
@@ -231,94 +240,6 @@ void train_network(std::string data_dir_path,
   nn.test(test_images, test_labels).print_detail(std::cout);
 }
 
-static tiny_dnn::core::backend_t parse_backend_name(const std::string &name) {
-  const std::array<const std::string, 5> names = {
-    "internal", "nnpack", "libdnn", "avx", "opencl",
-  };
-  for (size_t i = 0; i < names.size(); ++i) {
-    if (name.compare(names[i]) == 0) {
-      return static_cast<tiny_dnn::core::backend_t>(i);
-    }
-  }
-  return tiny_dnn::core::default_engine();
-}
-
-static void usage(const char *argv0) {
-  std::cout << "Usage: " << argv0 << " --data_path path_to_dataset_folder"
-            << " --learning_rate 0.001"
-            << " --epochs 100"
-            << " --minibatch_size 32"
-            << " --backend_type internal" << std::endl;
-}
-
 int main(int argc, char **argv) {
-  double learning_rate                   = 0.01;
-  int epochs                             = 5;
-  std::string data_path                       = "";
-  int minibatch_size                     = 16;
-  tiny_dnn::core::backend_t backend_type = parse_backend_name("internal");//tiny_dnn::core::backend_t::avx;
-
-  if (argc == 2) {
-    std::string argname(argv[1]);
-    if (argname == "--help" || argname == "-h") {
-      usage(argv[0]);
-      return 0;
-    }
-  }
-  for (int count = 1; count + 1 < argc; count += 2) {
-    std::string argname(argv[count]);
-    if (argname == "--learning_rate") {
-      learning_rate = atof(argv[count + 1]);
-    } else if (argname == "--epochs") {
-      epochs = atoi(argv[count + 1]);
-    } else if (argname == "--minibatch_size") {
-      minibatch_size = atoi(argv[count + 1]);
-    } else if (argname == "--backend_type") {
-      backend_type = parse_backend_name(argv[count + 1]);
-    } else if (argname == "--data_path") {
-      data_path = std::string(argv[count + 1]);
-    } else {
-      std::cerr << "Invalid parameter specified - \"" << argname << "\""
-                << std::endl;
-      usage(argv[0]);
-      return -1;
-    }
-  }
-  if (data_path == "") {
-    std::cerr << "Data path not specified." << std::endl;
-    usage(argv[0]);
-    return -1;
-  }
-  if (learning_rate <= 0) {
-    std::cerr
-      << "Invalid learning rate. The learning rate must be greater than 0."
-      << std::endl;
-    return -1;
-  }
-  if (epochs <= 0) {
-    std::cerr << "Invalid number of epochs. The number of epochs must be "
-                 "greater than 0."
-              << std::endl;
-    return -1;
-  }
-  if (minibatch_size <= 0 || minibatch_size > 50000) {
-    std::cerr
-      << "Invalid minibatch size. The minibatch size must be greater than 0"
-         " and less than dataset size (50000)."
-      << std::endl;
-    return -1;
-  }
-  std::cout << "Running with the following parameters:" << std::endl
-            << "Data path: " << data_path << std::endl
-            << "Learning rate: " << learning_rate << std::endl
-            << "Minibatch size: " << minibatch_size << std::endl
-            << "Number of epochs: " << epochs << std::endl
-            << "Backend type: " << backend_type << std::endl
-            << std::endl;
-  try {
-    train_network(data_path, learning_rate, epochs, minibatch_size,
-                  backend_type, std::cout);
-  } catch (tiny_dnn::nn_error &err) {
-    std::cerr << "Exception: " << err.what() << std::endl;
-  }
+  train_network(argv[1], argv[2], std::stod(argv[3]), std::stoi(argv[4]), std::stoi(argv[5]));
 }
