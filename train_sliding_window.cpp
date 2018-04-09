@@ -50,9 +50,9 @@ void convert_image(cv::Mat img,
 //   data.resize(w * h * 3);
 //   for (size_t y = 0; y < h; ++y) {
 //     for (size_t x = 0; x < w; ++x) {
-//       data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]-75) / 179.0;
-//       data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]-46) / 255.0;
-//       data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]-107) / 255.0;
+//       data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]-56) / 179.0;
+//       data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]-52) / 255.0;
+//       data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]-101) / 255.0;
 //     }
 //   }
 // }
@@ -97,7 +97,7 @@ void load_data(const std::string& directory,
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
           label = stoi(labelPath.filename().string());
-          value = {0,0,0,0};
+          value = {0,0,0,0,0};
           value[label] = 1;
           auto img = cv::imread(imgPath.string());
 
@@ -111,7 +111,7 @@ void load_data(const std::string& directory,
         //if (is_directory(p)) continue;
         BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(labelPath), boost::filesystem::directory_iterator())) {
           label = stoi(labelPath.filename().string());
-          value = {0,0,0,0};
+          value = {0,0,0,0,0};
           value[label] = 1;
           auto img = cv::imread(imgPath.string());
 
@@ -157,11 +157,9 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
      << pool(22, 22, 16, 2, backend_type)                               
      << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
      << dropout(8*8*32, 0.25)                    
-     << pool(8, 8, 32, 2, backend_type)
-     // << conv(4, 4, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()                                                                        
-     // << fc(2 * 2 * 64, 128, true, backend_type) << leaky_tanh()  
+     << pool(8, 8, 32, 2, backend_type) 
      << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
-     << fc(128, 4, true, backend_type) << softmax(4); 
+     << fc(128, 5, true, backend_type) << softmax(5); 
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";
@@ -203,25 +201,29 @@ void train_network(std::string data_path,
   auto on_enumerate_epoch = [&]() {
     std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
               << t.elapsed() << "s elapsed." << std::endl;
-    ++epoch;
+
     // tiny_dnn::result train_res = nn.test(train_images, train_labels);
     // float_t loss_train = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(train_images, train_values);
     // std::cout << "Training accuracy: " << train_res.num_success << "/" << train_res.num_total << " = " << 100.0*train_res.num_success/train_res.num_total << "%, loss: " << loss_train << std::endl;
-
-    tiny_dnn::result test_res = nn.test(test_images, test_labels);
-    float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(test_images, test_values);
-    std::cout << "Validation accuracy: " <<test_res.num_success << "/" << test_res.num_total << " = " << 100.0*test_res.num_success/test_res.num_total << "%, loss: " << loss_val << std::endl;
     
-    if(loss_val < 0){
-      std::cout << "Training crash!" << std::endl;
-      return;
+    if (epoch%20 == 1){
+      tiny_dnn::result test_res = nn.test(test_images, test_labels);
+      std::cout << "Validation accuracy: " <<test_res.num_success << "/" << test_res.num_total << " = " << 100.0*test_res.num_success/test_res.num_total << "%" << std::endl;
     }
-
-    if(loss_val < loss_val_temp){
-      loss_val_temp = loss_val;
-      std::ofstream ofs ("models/"+model_path);
-      ofs << nn;
+    if (epoch%5 == 1){
+      float_t loss_val = nn.get_loss<tiny_dnn::cross_entropy_multiclass>(test_images, test_values);
+      std::cout << "Validation loss: " << loss_val << std::endl;
+      if(loss_val < 0){
+        std::cout << "Training crash!" << std::endl;
+        return;
+      }
+      if(loss_val < loss_val_temp){
+        loss_val_temp = loss_val;
+        std::ofstream ofs (model_path);
+        ofs << nn;
+      }
     }
+    ++epoch;
 
     disp.restart(train_images.size());
     t.restart();

@@ -8,18 +8,13 @@ import matplotlib.pyplot as plt
 from Utils import write_txt
 import glob
 
-patch_size = 45
+patch_size = 25
 radius = int((patch_size-1)/2)
 
-def annotate_region(model_id, img_path,  mode):
+def annotate_region(model_id, img_path, result_path, mode):
     basename = os.path.split(img_path)[1]
-    result_path = join('tmp', 'result', basename)
-    if os.path.exists(result_path):
-        img = cv2.imread(result_path)
-        img_source = cv2.imread(img_path)
-    else:
-        img = cv2.imread(img_path)
-        img_source = np.copy(img)
+    img = cv2.imread(result_path)
+    img_source = cv2.imread(img_path)
     row, col = img.shape[:2]
     cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
     r = cv2.selectROI('mask', img)
@@ -62,7 +57,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_id", type=str, help="Folder id to saving anntations and images.")
     parser.add_argument("--img_path", type=str, help="Image to analyze.")
+    parser.add_argument("--result_path", type=str, help="Image to analyze.")
     parser.add_argument("--mode", type=int, help="Annotation mode.")
     args = parser.parse_args()
 
-    annotate_region(model_id = args.model_id, img_path = args.img_path, mode = args.mode)
+    annotate_region(model_id = args.model_id, img_path = args.img_path, result_path = args.result_path, mode = args.mode)

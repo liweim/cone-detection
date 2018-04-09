@@ -20,42 +20,24 @@
 
 int patch_size = 25;
 
-// void convert_image(cv::Mat img,
-//                    int w,
-//                    int h,
-//                    tiny_dnn::vec_t& data){
-
-//   cv::Mat resized;
-//   cv::resize(img, resized, cv::Size(w, h));
-//   data.resize(w * h * 3);
-//   for (size_t c = 0; c < 3; ++c) {
-//     for (size_t y = 0; y < h; ++y) {
-//       for (size_t x = 0; x < w; ++x) {
-//         data[c * w * h + y * w + x] =
-//           resized.at<cv::Vec3b>(y, x)[c] / 255.0;
-//       }
-//     }
-//   }
-// }
-
 void convert_image(cv::Mat img,
                    int w,
                    int h,
                    tiny_dnn::vec_t& data){
 
-  cv::Mat resized, hsv[3];
+  cv::Mat resized;
   cv::resize(img, resized, cv::Size(w, h));
-  cv::cvtColor(resized, resized, CV_RGB2HSV);
- 
   data.resize(w * h * 3);
-  for (size_t y = 0; y < h; ++y) {
-    for (size_t x = 0; x < w; ++x) {
-      data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]-75) / 179.0;
-      data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]-46) / 255.0;
-      data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]-107) / 255.0;
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t y = 0; y < h; ++y) {
+      for (size_t x = 0; x < w; ++x) {
+        data[c * w * h + y * w + x] =
+          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
+      }
     }
   }
 }
+
 
 // convert all images found in directory to vec_t
 void load_data(const std::string& directory,
@@ -158,7 +140,11 @@ void train_network(std::string data_path, std::string model_path) {
 
   construct_net(nn, tiny_dnn::core::backend_t::internal);
 
-  std::ifstream ifs("models/"+model_path);
+  std::ifstream ifs(model_path);
+  if (~ifs.good()){
+    std::cout << "File not exist!" << std::endl;
+    return;
+  }
   ifs >> nn;
 
   for (int i = 0; i < nn.depth(); i++) {

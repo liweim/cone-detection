@@ -20,42 +20,42 @@
 
 tiny_dnn::network<tiny_dnn::sequential> nn;
 
-// void convertImage(cv::Mat img,
-//                    int w,
-//                    int h,
-//                    tiny_dnn::vec_t& data){
-
-//   cv::Mat resized;
-//   cv::resize(img, resized, cv::Size(w, h));
-//   data.resize(w * h * 3);
-//   for (size_t c = 0; c < 3; ++c) {
-//     for (size_t y = 0; y < h; ++y) {
-//       for (size_t x = 0; x < w; ++x) {
-//         data[c * w * h + y * w + x] =
-//           resized.at<cv::Vec3b>(y, x)[c] / 255.0;
-//       }
-//     }
-//   }
-// }
-
 void convertImage(cv::Mat img,
                    int w,
                    int h,
                    tiny_dnn::vec_t& data){
 
-  cv::Mat resized, hsv[3];
+  cv::Mat resized;
   cv::resize(img, resized, cv::Size(w, h));
-  cv::cvtColor(resized, resized, CV_RGB2HSV);
- 
   data.resize(w * h * 3);
-  for (size_t y = 0; y < h; ++y) {
-    for (size_t x = 0; x < w; ++x) {
-      data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]-75) / 179.0;
-      data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]-46) / 255.0;
-      data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]-107) / 255.0;
+  for (size_t c = 0; c < 3; ++c) {
+    for (size_t y = 0; y < h; ++y) {
+      for (size_t x = 0; x < w; ++x) {
+        data[c * w * h + y * w + x] =
+          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
+      }
     }
   }
 }
+
+// void convertImage(cv::Mat img,
+//                    int w,
+//                    int h,
+//                    tiny_dnn::vec_t& data){
+
+//   cv::Mat resized, hsv[3];
+//   cv::resize(img, resized, cv::Size(w, h));
+//   cv::cvtColor(resized, resized, CV_RGB2HSV);
+ 
+//   data.resize(w * h * 3);
+//   for (size_t y = 0; y < h; ++y) {
+//     for (size_t x = 0; x < w; ++x) {
+//       data[y * w + x] = (resized.at<cv::Vec3b>(y, x)[0]-56) / 179.0;
+//       data[w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[1]-52) / 255.0;
+//       data[2 * w * h + y * w + x] = (resized.at<cv::Vec3b>(y, x)[2]-101) / 255.0;
+//     }
+//   }
+// }
 
 void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   cv::Mat grayL, grayR;
@@ -148,21 +148,21 @@ void constructNetwork(const std::string &dictionary, int width, int height) {
      << conv(width-18, height-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      // << dropout((patch_size-20)*(patch_size-20)*32, 0.25)
      << conv(width-20, height-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(width-22, height-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type);
+     << conv(width-22, height-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type);
 
   // load nets
   std::ifstream ifs(dictionary.c_str());
   ifs >> nn;
 }
 
-void softmax(cv::Vec4d x, cv::Vec4d &y) {
+void softmax(cv::Vec<double,5> x, cv::Vec<double,5> &y) {
   double min, max, denominator = 0;
   cv::minMaxLoc(x, &min, &max);
-  for (int j = 0; j < 4; j++) {
+  for (int j = 0; j < 5; j++) {
     y[j] = std::exp(x[j] - max);
     denominator += y[j];
   }
-  for (int j = 0; j < 4; j++) {
+  for (int j = 0; j < 5; j++) {
     y[j] /= denominator;
   }
 }
@@ -356,97 +356,105 @@ void detectImg(const std::string &imgPath, double threshold) {
   savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
   cv::imwrite(savePath, rectified);
 
-  // cv::resize(rectified, img, cv::Size(320, 180));
-  // auto patchImg = img(roi);
+  cv::resize(rectified, img, cv::Size(320, 180));
+  auto patchImg = img(roi);
 
-  // // convert imagefile to vec_t
-  // tiny_dnn::vec_t data;
-  // convertImage(patchImg, inputWidth, inputHeight, data);
+  // convert imagefile to vec_t
+  tiny_dnn::vec_t data;
+  convertImage(patchImg, inputWidth, inputHeight, data);
 
-  // // recognize
-  // auto prob = nn.predict(data);
+  // recognize
+  auto prob = nn.predict(data);
 
-  // cv::Mat probMap = cv::Mat::zeros(outputHeight, outputWidth, CV_64FC4);
-  // for (int c = 0; c < 4; ++c)
-  //   for (int y = 0; y < outputHeight; ++y)
-  //     for (int x = 0; x < outputWidth; ++x)
-  //       probMap.at<cv::Vec4d>(y, x)[c] = prob[c * outputWidth * outputHeight + y * outputWidth + x];
+  cv::Mat probMap = cv::Mat::zeros(outputHeight, outputWidth, CV_64FC(5));
+  for (int c = 0; c < 5; ++c)
+    for (int y = 0; y < outputHeight; ++y)
+      for (int x = 0; x < outputWidth; ++x)
+        probMap.at<cv::Vec<double,5>>(y, x)[c] = prob[c * outputWidth * outputHeight + y * outputWidth + x];
          
-  // cv::Vec4d probSoftmax(4);
-  // cv::Mat probMapSoftmax = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
-  // cv::Mat probMapIndex = cv::Mat::zeros(outputHeight, outputWidth, CV_32S);
-  // cv::Mat probMapSplit[3] = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
-  // for (int y = 0; y < outputHeight; ++y){
-  //   for (int x = 0; x < outputWidth; ++x){
-  //     softmax(probMap.at<cv::Vec4d>(y, x), probSoftmax);
-  //     for (int c = 0; c < 3; ++c)
-  //       if(probSoftmax[c+1] > threshold){
-  //         probMapSoftmax.at<double>(y, x) = probSoftmax[c+1];
-  //         probMapIndex.at<int>(y, x) = c+1;
-  //         probMapSplit[c].at<double>(y, x) = probSoftmax[c+1];
-  //       }
-  //   }
-  // }
+  cv::Vec<double,5> probSoftmax(5);
+  cv::Mat probMapSoftmax = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
+  cv::Mat probMapIndex = cv::Mat::zeros(outputHeight, outputWidth, CV_32S);
+  cv::Mat probMapSplit[4] = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
+  for (int y = 0; y < outputHeight; ++y){
+    for (int x = 0; x < outputWidth; ++x){
+      softmax(probMap.at<cv::Vec<double,5>>(y, x), probSoftmax);
+      for (int c = 0; c < 4; ++c)
+        if(probSoftmax[c+1] > threshold){
+          probMapSoftmax.at<double>(y, x) = probSoftmax[c+1];
+          probMapIndex.at<int>(y, x) = c+1;
+          probMapSplit[c].at<double>(y, x) = probSoftmax[c+1];
+        }
+    }
+  }
 
-  // std::vector <cv::Point> cone;
-  // cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
-  // int label;
-  // cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
+  std::vector <cv::Point> cone;
+  cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
+  int label;
+  std::string labelName;
+  cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
 
-  // // std::ofstream savefile;
-  // // int index2 = filename.find_last_of('.');
-  // // savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
-  // // std::cout << savePath << std::endl;
-  // // savefile.open(savePath);
-  // cv::Vec3f point3D;
-  // if (cone.size()>0){
-  //   for(size_t i=0; i<cone.size(); i++){
-  //     position = (cone[i] + positionShift)*2;
-  //     label = probMapIndex.at<int>(cone[i]);
-  //     if (label == 1){
-  //       cv::circle(rectified, position, 1, {255, 0, 0}, -1);
-  //     }
-  //     if (label == 2){
-  //       cv::circle(rectified, position, 1, {0, 255, 255}, -1);
-  //     }
-  //     if (label == 3){
-  //       cv::circle(rectified, position, 1, {0, 0, 255}, -1);
-  //     }
-  //     point3D = XYZ.at<cv::Vec3f>(position);
-  //     std::cout << position << " " << label << " " << point3D << std::endl;
-  //     // savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+std::to_string(label)+","+std::to_string(point3D[0])+","+std::to_string(point3D[1])+","+std::to_string(point3D[2])+"\n"; 
-  //   }
-  // }
-  // // savefile.close();
+  std::ofstream savefile;
+  int index2 = filename.find_last_of('.');
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
+  // std::cout << savePath << std::endl;
+  savefile.open(savePath);
+  cv::Vec3f point3D;
+  if (cone.size()>0){
+    for(size_t i=0; i<cone.size(); i++){
+      position = (cone[i] + positionShift)*2;
+      label = probMapIndex.at<int>(cone[i]);
+      if (label == 1){
+        cv::circle(rectified, position, 3, {255, 0, 0}, -1);
+        labelName = "blue";
+      }
+      if (label == 2){
+        cv::circle(rectified, position, 3, {0, 255, 255}, -1);
+        labelName = "yellow";
+      }
+      if (label == 3){
+        cv::circle(rectified, position, 3, {0, 165, 255}, -1);
+        labelName = "orange";
+      }
+      if (label == 4){
+        cv::circle(rectified, position, 6, {0, 0, 255}, -1);
+        labelName = "big orange";
+      }
+      point3D = XYZ.at<cv::Vec3f>(position);
+      std::cout << position << " " << labelName << " " << point3D << std::endl;
+      savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+labelName+","+std::to_string(point3D[0])+","+std::to_string(point3D[1])+","+std::to_string(point3D[2])+"\n"; 
+    }
+  }
+  savefile.close();
   
-  // // cv::namedWindow("probMapSoftmax", cv::WINDOW_NORMAL);
-  // // cv::imshow("probMapSoftmax", probMapSoftmax);
-  // // cv::namedWindow("img", cv::WINDOW_NORMAL);
-  // // cv::imshow("img", rectified);
-  // // cv::waitKey(0);
+  // cv::namedWindow("probMapSoftmax", cv::WINDOW_NORMAL);
+  // cv::imshow("probMapSoftmax", probMapSoftmax);
+  // cv::namedWindow("img", cv::WINDOW_NORMAL);
+  // cv::imshow("img", rectified);
+  // cv::waitKey(0);
 
-  // // cv::namedWindow("rectified", cv::WINDOW_NORMAL);
-  // // cv::imshow("rectified", rectified);
-  // // cv::namedWindow("0", cv::WINDOW_NORMAL);
-  // // cv::imshow("0", probMapSplit[0]);
-  // // cv::namedWindow("1", cv::WINDOW_NORMAL);
-  // // cv::imshow("1", probMapSplit[1]);
-  // // cv::namedWindow("2", cv::WINDOW_NORMAL);
-  // // cv::imshow("2", probMapSplit[2]);
-  // // cv::waitKey(0);
+  // cv::namedWindow("rectified", cv::WINDOW_NORMAL);
+  // cv::imshow("rectified", rectified);
+  // cv::namedWindow("0", cv::WINDOW_NORMAL);
+  // cv::imshow("0", probMapSplit[0]);
+  // cv::namedWindow("1", cv::WINDOW_NORMAL);
+  // cv::imshow("1", probMapSplit[1]);
+  // cv::namedWindow("2", cv::WINDOW_NORMAL);
+  // cv::imshow("2", probMapSplit[2]);
+  // cv::waitKey(0);
 
-  // savePath = imgPath.substr(0,index-7)+"/results/"+filename;
-  // cv::imwrite(savePath, rectified);
-  // // std::cout << savePath << std::endl;
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename;
+  cv::imwrite(savePath, rectified);
+  // std::cout << savePath << std::endl;
 }
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
   constructNetwork(modelPath, 320, 90);
   boost::filesystem::path dpath(imgFolderPath);
   BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
-    std::cout << imgPath.string() << std::endl;
-    
-    auto startTime = std::chrono::system_clock::now();
+  std::cout << imgPath.string() << std::endl;
+  
+  auto startTime = std::chrono::system_clock::now();
 	detectImg(imgPath.string(), threshold);
 	auto endTime = std::chrono::system_clock::now();
 	std::chrono::duration<double> diff = endTime-startTime;

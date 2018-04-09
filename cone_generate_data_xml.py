@@ -41,10 +41,10 @@ def generate_data_xml(annotation_paths, data_path, efficient):
     if os.path.exists(data_path):
         rmtree(data_path)
     # os.mkdir(data_path)
-    for i in range(4):
+    for i in range(5):
         os.makedirs(join(data_path, 'train', str(i)))
         os.makedirs(join(data_path, 'test', str(i)))
-    classes = ['background', 'blue', 'yellow', 'orange']
+    classes = ['background', 'blue', 'yellow', 'orange', 'orange2']
 
     count0 = 0
     column_name = ['x', 'y', 'ratio', 'label']
@@ -142,10 +142,12 @@ def generate_data_xml(annotation_paths, data_path, efficient):
             #     cv2.circle(mask, (x, y), int(factor0*ratio), 0, -1)
             for x, y, label, ratio in cones:
                 if label == 'blue':
-                    cv2.circle(mask, (x, y), 2, 253, -1)
+                    cv2.circle(mask, (x, y), 2, 252, -1)
                 if label == 'yellow':
-                    cv2.circle(mask, (x, y), 2, 254, -1)
+                    cv2.circle(mask, (x, y), 2, 253, -1)
                 if label == 'orange':
+                    cv2.circle(mask, (x, y), 2, 254, -1)
+                if label == 'orange2':
                     cv2.circle(mask, (x, y), 2, 255, -1)
             mask[:radius, :] = 0
             mask[img.shape[0]-radius:, :] = 0
@@ -180,12 +182,14 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                                 flag = 1                      
                         if mask[r,c] > 100:
                             flag = 1
-                            if mask[r,c] == 253:
+                            if mask[r,c] == 252:
                                 path = join(path, '1')
-                            if mask[r,c] == 254:
+                            if mask[r,c] == 253:
                                 path = join(path, '2')
-                            if mask[r,c] == 255:
+                            if mask[r,c] == 254:
                                 path = join(path, '3')
+                            if mask[r,c] == 255:
+                                path = join(path, '4')
                         if flag:
                             if os.path.split(os.path.split(path)[0])[1] == 'train':
                                 train_imgs.append(image)
@@ -213,7 +217,7 @@ def generate_data_xml(annotation_paths, data_path, efficient):
             num = len(os.listdir(path))
             cv2.imwrite(join(path, str(num)+'.png'), image)
 
-    for i in range(4):
+    for i in range(5):
         path = join(data_path, 'train', str(i))
         print('{}: {}'.format(classes[i], len(os.listdir(path))))
 
