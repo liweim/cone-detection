@@ -17,7 +17,7 @@ factor0 = 8
 factor100 = 12
 radius = int((patch_size-1)/2)
 
-# patch_size = 32
+# patch_size = 45
 # resize_rate = 1
 # factor0 = 20
 # factor100 = 24
@@ -120,7 +120,7 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                 #     for c in range(max(0,int(x-tmp)+1),min(col,int(x+tmp)+1)):
                 #         mask_img[r, c] = [choice(range(256)), choice(range(256)), choice(range(256))]
                 # print(ratio)
-                if ratio > 0.5:
+                if ratio > 0:
                     cones.append([x, y, label, ratio])
                     # cv2.circle(mask, (x, y), int(factor100*ratio), 100, -1)
 

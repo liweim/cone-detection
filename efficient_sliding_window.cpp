@@ -19,6 +19,23 @@
 #include <boost/filesystem.hpp>
 
 tiny_dnn::network<tiny_dnn::sequential> nn;
+int patchSize = 25;
+int patchRadius = int((patchSize-1)/2);
+int width = 320;
+int height = 180;
+int inputWidth = width;
+int heightUp = 80;
+int heightDown = 180;//140;
+int inputHeight = heightDown-heightUp;
+
+// int patchSize = 45;
+// int patchRadius = int((patchSize-1)/2);
+// int width = 640;
+// int height = 360;
+// int inputWidth = width;
+// int heightUp = 160;
+// int heightDown = 360;//140;
+// int inputHeight = heightDown-heightUp;
 
 void convertImage(cv::Mat img,
                    int w,
@@ -138,6 +155,21 @@ void constructNetwork(const std::string &dictionary, int width, int height) {
   using tanh    = tiny_dnn::tanh_layer;
   tiny_dnn::core::backend_t backend_type = tiny_dnn::core::backend_t::internal;
 
+  // nn << conv(width, height, 7, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-6, height-6, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((width-12)*(height-12)*8, 0.25)
+  //    << conv(width-12, height-12, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-18, height-18, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((width-24)*(height-24)*8, 0.25)
+  //    << conv(width-24, height-24, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-28, height-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((width-32)*(height-32)*16, 0.25)
+  //    << conv(width-32, height-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-36, height-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((width-40)*(height-40)*16, 0.25)
+  //    << conv(width-40, height-40, 3, 16, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-42, height-42, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type);
+
   nn << conv(width, height, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << conv(width-4, height-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      // << dropout((patch_size-8)*(patch_size-8)*8, 0.25)
@@ -155,18 +187,42 @@ void constructNetwork(const std::string &dictionary, int width, int height) {
   ifs >> nn;
 }
 
-void softmax(cv::Vec<double,5> x, cv::Vec<double,5> &y) {
-  double min, max, denominator = 0;
-  cv::minMaxLoc(x, &min, &max);
-  for (int j = 0; j < 5; j++) {
-    y[j] = std::exp(x[j] - max);
-    denominator += y[j];
-  }
-  for (int j = 0; j < 5; j++) {
-    y[j] /= denominator;
-  }
-}
+// void softmax(cv::Vec<double,5> x, cv::Vec<double,5> &y) {
+//   double min, max, denominator = 0;
+//   cv::minMaxLoc(x, &min, &max);
+//   for (int j = 0; j < 5; j++) {
+//     y[j] = std::exp(x[j] - max);
+//     denominator += y[j];
+//   }
+//   for (int j = 0; j < 5; j++) {
+//     y[j] /= denominator;
+//   }
+// }
 
+template <typename It>
+void softmax (It beg, It end)
+{
+  using VType = typename std::iterator_traits<It>::value_type;
+
+  static_assert(std::is_floating_point<VType>::value,
+                "Softmax function only applicable for floating types");
+
+  auto max_ele { *std::max_element(beg, end) };
+
+  std::transform(
+      beg,
+      end,
+      beg,
+      [&](VType x){ return std::exp(x - max_ele); });
+
+  VType exptot = std::accumulate(beg, end, 0.0);
+
+  std::transform(
+      beg,
+      end,
+      beg,
+      std::bind2nd(std::divides<VType>(), exptot));  
+}
 
 std::vector <cv::Point> imRegionalMax(cv::Mat input, int nLocMax, double threshold, int minDistBtwLocMax)
 {
@@ -328,12 +384,7 @@ std::vector <cv::Point> imRegionalMax(cv::Mat input, int nLocMax, double thresho
 // }
 
 void detectImg(const std::string &imgPath, double threshold) {
-  int patchSize = 25;
-  int patchRadius = int((patchSize-1)/2);
-  int inputWidth = 320;
-  int heightUp = 90; //80;
-  int heightDown = 180; //140;
-  int inputHeight = heightDown-heightUp;
+  auto startTime = std::chrono::system_clock::now();
 
   int outputWidth  = inputWidth - (patchSize - 1);
   int outputHeight  = inputHeight - (patchSize - 1);
@@ -344,9 +395,15 @@ void detectImg(const std::string &imgPath, double threshold) {
   roi.width = inputWidth;
   roi.height = inputHeight;
   auto imgSource = cv::imread(imgPath);
+  std::chrono::duration<double> diff = std::chrono::system_clock::now()-startTime;
+  std::cout << "Imread: " << diff.count() << " s\n";
+  startTime = std::chrono::system_clock::now();
 
   cv::Mat Q, disp, rectified, XYZ, img;
   reconstruction(imgSource, Q, disp, rectified, XYZ);
+  diff = std::chrono::system_clock::now()-startTime;
+  std::cout << "Reconstruction: " << diff.count() << " s\n";
+  startTime = std::chrono::system_clock::now();
 
   int index;
   std::string filename, savePath;
@@ -356,7 +413,7 @@ void detectImg(const std::string &imgPath, double threshold) {
   savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
   cv::imwrite(savePath, rectified);
 
-  cv::resize(rectified, img, cv::Size(320, 180));
+  cv::resize(rectified, img, cv::Size(width, height));
   auto patchImg = img(roi);
 
   // convert imagefile to vec_t
@@ -365,6 +422,9 @@ void detectImg(const std::string &imgPath, double threshold) {
 
   // recognize
   auto prob = nn.predict(data);
+  diff = std::chrono::system_clock::now()-startTime;
+  std::cout << "Predict: " << diff.count() << " s\n";
+  startTime = std::chrono::system_clock::now();
 
   cv::Mat probMap = cv::Mat::zeros(outputHeight, outputWidth, CV_64FC(5));
   for (int c = 0; c < 5; ++c)
@@ -387,22 +447,30 @@ void detectImg(const std::string &imgPath, double threshold) {
         }
     }
   }
+  diff = std::chrono::system_clock::now()-startTime;
+  std::cout << "Softmax: " << diff.count() << " s\n";
+  startTime = std::chrono::system_clock::now();
 
   std::vector <cv::Point> cone;
   cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
   int label;
   std::string labelName;
   cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
+  diff = std::chrono::system_clock::now()-startTime;
+  std::cout << "Local maxima: " << diff.count() << " s\n";
+  startTime = std::chrono::system_clock::now();
 
   std::ofstream savefile;
   int index2 = filename.find_last_of('.');
   savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
   // std::cout << savePath << std::endl;
   savefile.open(savePath);
-  cv::Vec3f point3D;
+  cv::Point3f point3D;
   if (cone.size()>0){
     for(size_t i=0; i<cone.size(); i++){
       position = (cone[i] + positionShift)*2;
+      point3D = XYZ.at<cv::Point3f>(position);
+
       label = probMapIndex.at<int>(cone[i]);
       if (label == 1){
         cv::circle(rectified, position, 3, {255, 0, 0}, -1);
@@ -420,9 +488,10 @@ void detectImg(const std::string &imgPath, double threshold) {
         cv::circle(rectified, position, 6, {0, 0, 255}, -1);
         labelName = "big orange";
       }
-      point3D = XYZ.at<cv::Vec3f>(position);
+      
       std::cout << position << " " << labelName << " " << point3D << std::endl;
-      savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+labelName+","+std::to_string(point3D[0])+","+std::to_string(point3D[1])+","+std::to_string(point3D[2])+"\n"; 
+      savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+labelName+","+std::to_string(point3D.x)+","+std::to_string(point3D.y)+","+std::to_string(point3D.z)+"\n";   
+      
     }
   }
   savefile.close();
@@ -446,10 +515,13 @@ void detectImg(const std::string &imgPath, double threshold) {
   savePath = imgPath.substr(0,index-7)+"/results/"+filename;
   cv::imwrite(savePath, rectified);
   // std::cout << savePath << std::endl;
+  diff = std::chrono::system_clock::now()-startTime;
+  std::cout << "Savefile: " << diff.count() << " s\n";
+  startTime = std::chrono::system_clock::now();
 }
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
-  constructNetwork(modelPath, 320, 90);
+  constructNetwork(modelPath, inputWidth, inputHeight);
   boost::filesystem::path dpath(imgFolderPath);
   BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
   std::cout << imgPath.string() << std::endl;

@@ -114,29 +114,20 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using softmax = tiny_dnn::softmax_layer;
   using dropout = tiny_dnn::dropout_layer;
 
-  // nn << conv(patch_size, patch_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-6, patch_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << dropout((patch_size-12)*(patch_size-12)*16, 0.25)
-  //    << conv(patch_size-12, patch_size-12, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-18, patch_size-18, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << dropout((patch_size-24)*(patch_size-24)*16, 0.25)
-  //    << conv(patch_size-24, patch_size-24, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  // nn << conv(patch_size, patch_size, 7, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(patch_size-6, patch_size-6, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((patch_size-12)*(patch_size-12)*8, 0.25)
+  //    << conv(patch_size-12, patch_size-12, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(patch_size-18, patch_size-18, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((patch_size-24)*(patch_size-24)*8, 0.25)
+  //    << conv(patch_size-24, patch_size-24, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << conv(patch_size-28, patch_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << dropout((patch_size-32)*(patch_size-32)*16, 0.25)
   //    << conv(patch_size-32, patch_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << conv(patch_size-36, patch_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << dropout((patch_size-40)*(patch_size-40)*16, 0.25)
-  //    << conv(patch_size-40, patch_size-40, 3, 16, 128, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-42, patch_size-42, 3, 128, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
-
-  // nn << conv(patch_size, patch_size, 7, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-6, patch_size-6, 7, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    // << dropout((patch_size-12)*(patch_size-12)*16, 0.25)
-  //    << conv(patch_size-12, patch_size-12, 5, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-16, patch_size-16, 5, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    // << dropout((patch_size-20)*(patch_size-20)*32, 0.25)
-  //    << conv(patch_size-20, patch_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-22, patch_size-22, 3, 64, 4, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(4);
+  //    << conv(patch_size-40, patch_size-40, 3, 16, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(patch_size-42, patch_size-42, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
 
   nn << conv(patch_size, patch_size, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << conv(patch_size-4, patch_size-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()

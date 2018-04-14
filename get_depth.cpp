@@ -118,21 +118,22 @@ void getDepth(const string &imgPath) {
       getline(liness, label);
       
       Point position(stoi(x), stoi(y));
+      Point3f point3D = XYZ.at<Point3f>(position);
       if(label == "1"){
         label = "blue";
-        circle(rectified, position, 1, {255, 0, 0}, -1);
+        circle(rectified, position, 2, {255, 0, 0}, -1);
       }
       if(label == "0"){
         label = "yellow";
-        circle(rectified, position, 1, {0, 255, 255}, -1);
+        circle(rectified, position, 2, {0, 255, 255}, -1);
       }
       if(label == "2"){
         label = "orange";
-        circle(rectified, position, 1, {0, 0, 255}, -1);
+        circle(rectified, position, 2, {0, 0, 255}, -1);
       }
-      Vec3f point3D = XYZ.at<Vec3f>(position);
+      
       // cout << position << " " << label << " " << point3D << endl;
-      savefile << x+","+y+","+label+","+to_string(point3D[0])+","+to_string(point3D[1])+","+to_string(point3D[2])+"\n"; 
+      savefile << x+","+y+","+label+","+to_string(point3D.x)+","+to_string(point3D.y)+","+to_string(point3D.z)+"\n"; 
   }
   savefile.close();
   
@@ -152,7 +153,7 @@ void getDepth(const string &imgPath) {
   // imshow("2", probMapSplit[2]);
   // waitKey(0);
 
-  savePath = imgPath.substr(0,index-7)+"/results/"+filename;
+  savePath = imgPath.substr(0,index-7)+"/results_3d/"+filename;
   imwrite(savePath, rectified);
   // cout << savePath << endl;
 }
@@ -161,7 +162,7 @@ void getAllImg(const string &imgFolderPath){
   boost::filesystem::path dpath(imgFolderPath);
   BOOST_FOREACH(const boost::filesystem::path& imgPath, make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
     cout << imgPath.string() << endl;
-	getDepth(imgPath.string());
+	  getDepth(imgPath.string());
   }
 }
 
