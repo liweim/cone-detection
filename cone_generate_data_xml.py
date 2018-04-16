@@ -66,7 +66,7 @@ def generate_data_xml(annotation_paths, data_path, efficient):
             # mask_img = np.random.random_integers(0, 255, img.shape).astype(np.uint8)
             # mask_img = np.zeros(img.shape).astype(np.uint8)
             row, col = img.shape[:2]
-            mask = np.zeros(img.shape[:2]).astype(np.uint8)
+            mask = np.zeros(img.shape[:2]).astype(np.uint8)+100
             cones = []
             
             for member in root.findall('object'):
@@ -78,9 +78,11 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                 x = int((x1+x2)/2)
                 y = int((y1+y2)/2)
 
+                mask[y1:y2,x1:x2] = 0
                 triangle = np.array([[(x1+x2)/2,y1],[x1,y2],[x2,y2]], np.int32)
                 triangle = triangle.reshape((-1,1,2))
                 cv2.polylines(mask,[triangle],True,100)
+                
                 # cv2.polylines(mask_img,[triangle],True,(0,0,255))
 
                 # polygonset = []
@@ -120,7 +122,7 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                 #     for c in range(max(0,int(x-tmp)+1),min(col,int(x+tmp)+1)):
                 #         mask_img[r, c] = [choice(range(256)), choice(range(256)), choice(range(256))]
                 # print(ratio)
-                if ratio > 0:
+                if ratio > 0.4:
                     cones.append([x, y, label, ratio])
                     # cv2.circle(mask, (x, y), int(factor100*ratio), 100, -1)
 
@@ -155,17 +157,38 @@ def generate_data_xml(annotation_paths, data_path, efficient):
             mask[:, img.shape[1]-radius:] = 0
 
             # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
-            # cv2.imshow('mask', mask_img)
+            # cv2.imshow('mask', mask)
             # cv2.waitKey(0)
 
-            pickup_rate = np.sum(mask>100)/np.sum(mask==100)/3
+            extra_back = 0
+            while extra_back<5:
+                r = choice(range(row))
+                c = choice(range(col))
+                if mask[r,c] == 100:
+                    image = img[r-radius:r+radius+1, c-radius:c+radius+1]
+                    image = cv2.resize(image, (patch_size, patch_size))
+                    if random() < 0.7:
+                        path = join(data_path, 'train/0')
+                        # train_imgs.append(image)
+                    else:
+                        path = join(data_path, 'test/0')
+                    num = len(os.listdir(path))
+                    cv2.imwrite(join(path, str(num)+'.png'), image)
+                    extra_back += 1
+
             for x, y, label, ratio in cones:
                 patch_radius = int(radius * ratio)
                 roi_radius = int(factor100 * ratio)
                 if efficient:
                     patch_radius = radius
-                for c in range(max(x-roi_radius,patch_radius), min(x+roi_radius,col-patch_radius)):
-                    for r in range(max(y-roi_radius,patch_radius), min(y+roi_radius,row-patch_radius)):
+                cl = max(x-roi_radius,patch_radius)
+                cr = min(x+roi_radius,col-patch_radius)
+                rl = max(y-roi_radius,patch_radius)
+                rr = min(y+roi_radius,row-patch_radius)
+                mask_tmp = mask[rl:rr,cl:cr]
+                pickup_rate = np.sum(mask_tmp>100)/np.sum(mask_tmp==100)/3
+                for c in range(cl, cr):
+                    for r in range(rl, rr):
                         flag = 0
                         if random() < 0.7:
                             image = mask_img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
@@ -190,9 +213,9 @@ def generate_data_xml(annotation_paths, data_path, efficient):
                                 path = join(path, '3')
                             if mask[r,c] == 255:
                                 path = join(path, '4')
-                        if flag:
-                            if os.path.split(os.path.split(path)[0])[1] == 'train':
-                                train_imgs.append(image)
+                        if flag and np.max(image)>0:
+                            # if os.path.split(os.path.split(path)[0])[1] == 'train':
+                            #     train_imgs.append(image)
                             num = len(os.listdir(path))
                             cv2.imwrite(join(path, str(num)+'.png'), image)
 
@@ -215,16 +238,21 @@ def generate_data_xml(annotation_paths, data_path, efficient):
             else:
                 path = join(data_path, 'test', '0')
             num = len(os.listdir(path))
-            cv2.imwrite(join(path, str(num)+'.png'), image)
+            if np.max(image)>0:
+                cv2.imwrite(join(path, str(num)+'.png'), image)
+                # print(img_path)
+                # cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
+                # cv2.imshow('mask', image)
+                # cv2.waitKey(0)
 
     for i in range(5):
         path = join(data_path, 'train', str(i))
         print('{}: {}'.format(classes[i], len(os.listdir(path))))
 
-    train_imgs = np.array(train_imgs)
-    print(np.mean(train_imgs[:,:,:,0]))
-    print(np.mean(train_imgs[:,:,:,1]))
-    print(np.mean(train_imgs[:,:,:,2]))
+    # train_imgs = np.array(train_imgs)
+    # print(np.mean(train_imgs[:,:,:,0]))
+    # print(np.mean(train_imgs[:,:,:,1]))
+    # print(np.mean(train_imgs[:,:,:,2]))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

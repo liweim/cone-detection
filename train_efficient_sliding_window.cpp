@@ -113,33 +113,53 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using tanh    = tiny_dnn::tanh_layer;
   using softmax = tiny_dnn::softmax_layer;
   using dropout = tiny_dnn::dropout_layer;
+  int width = patch_size;
+  int height = patch_size;
 
-  // nn << conv(patch_size, patch_size, 7, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-6, patch_size-6, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << dropout((patch_size-12)*(patch_size-12)*8, 0.25)
-  //    << conv(patch_size-12, patch_size-12, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-18, patch_size-18, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << dropout((patch_size-24)*(patch_size-24)*8, 0.25)
-  //    << conv(patch_size-24, patch_size-24, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-28, patch_size-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << dropout((patch_size-32)*(patch_size-32)*16, 0.25)
-  //    << conv(patch_size-32, patch_size-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-36, patch_size-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << dropout((patch_size-40)*(patch_size-40)*16, 0.25)
-  //    << conv(patch_size-40, patch_size-40, 3, 16, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-  //    << conv(patch_size-42, patch_size-42, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
+  // nn << conv(width, height, 7, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-6, height-6, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-12)*(height-12)*8, 0.25)
+  //    << conv(width-12, height-12, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-18, height-18, 7, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-24)*(height-24)*8, 0.25)
+  //    << conv(width-24, height-24, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-28, height-28, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-32)*(height-32)*16, 0.25)
+  //    << conv(width-32, height-32, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-36, height-36, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-40)*(height-40)*16, 0.25)
+  //    << conv(width-40, height-40, 3, 16, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-42, height-42, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
 
-  nn << conv(patch_size, patch_size, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(patch_size-4, patch_size-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << dropout((patch_size-8)*(patch_size-8)*8, 0.25)
-     << conv(patch_size-8, patch_size-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(patch_size-12, patch_size-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << dropout((patch_size-16)*(patch_size-16)*16, 0.25)
-     << conv(patch_size-16, patch_size-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(patch_size-18, patch_size-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << dropout((patch_size-20)*(patch_size-20)*32, 0.25)
-     << conv(patch_size-20, patch_size-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(patch_size-22, patch_size-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
+  // nn << conv(width, height, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-4, height-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-8)*(height-8)*8, 0.25)
+  //    << conv(width-8, height-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-12, height-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-16)*(height-16)*16, 0.25)
+  //    << conv(width-16, height-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-18, height-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << dropout((width-20)*(height-20)*32, 0.25)
+  //    << conv(width-20, height-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-22, height-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
+
+  nn << conv(width, height, 3, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-2, height-2, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << dropout((width-4)*(height-4)*8, 0.25)
+     << conv(width-4, height-4, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-6, height-6, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << dropout((width-8)*(height-8)*8, 0.25)
+     << conv(width-8, height-8, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-10, height-10, 3, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << dropout((width-12)*(height-12)*16, 0.25)
+     << conv(width-12, height-12, 3, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-14, height-14, 3, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << dropout((width-16)*(height-16)*16, 0.25)
+     << conv(width-16, height-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-18, height-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << dropout((width-20)*(height-20)*32, 0.25)
+     << conv(width-20, height-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-22, height-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
 
 
    for (int i = 0; i < nn.depth(); i++) {

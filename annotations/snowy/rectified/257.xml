@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>257.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/snowy/rectified/257.png</path>
+	<path>/media/weiming/Ny volym/ubuntu-project/cone-detection/annotations/snowy/rectified/257.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -69,6 +69,18 @@
 			<ymin>219</ymin>
 			<xmax>555</xmax>
 			<ymax>252</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>orange</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>527</xmin>
+			<ymin>201</ymin>
+			<xmax>542</xmax>
+			<ymax>223</ymax>
 		</bndbox>
 	</object>
 </annotation>

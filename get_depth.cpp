@@ -86,7 +86,7 @@ void reconstruction(Mat img, Mat &Q, Mat &disp, Mat &rectified, Mat &XYZ){
   rectified = imgL;
 
   reprojectImageTo3D(disp, XYZ, Q);
-  XYZ *= 0.001;
+  XYZ *= 0.002;
 }
 
 void getDepth(const string &imgPath) {
@@ -101,7 +101,7 @@ void getDepth(const string &imgPath) {
   index = imgPath.find_last_of('/');
   filename = imgPath.substr(index+1);
   savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
-  imwrite(savePath, rectified);
+  // imwrite(savePath, rectified);
 
   int index2 = filename.find_last_of('.');
   ifstream csvPath ( imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv" );

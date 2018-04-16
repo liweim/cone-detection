@@ -23,8 +23,10 @@ int patchSize = 25;
 int patchRadius = int((patchSize-1)/2);
 int width = 320;
 int height = 180;
-int inputWidth = width;
-int heightUp = 80;
+int widthLeft = 0;
+int widthRight = 320;
+int inputWidth = widthRight-widthLeft;
+int heightUp = 90;//80;
 int heightDown = 180;//140;
 int inputHeight = heightDown-heightUp;
 
@@ -42,14 +44,14 @@ void convertImage(cv::Mat img,
                    int h,
                    tiny_dnn::vec_t& data){
 
-  cv::Mat resized;
-  cv::resize(img, resized, cv::Size(w, h));
+  // cv::Mat resized;
+  // cv::resize(img, resized, cv::Size(w, h));
   data.resize(w * h * 3);
   for (size_t c = 0; c < 3; ++c) {
     for (size_t y = 0; y < h; ++y) {
       for (size_t x = 0; x < w; ++x) {
         data[c * w * h + y * w + x] =
-          resized.at<cv::Vec3b>(y, x)[c] / 255.0;
+          img.at<cv::Vec3b>(y, x)[c] / 255.0;
       }
     }
   }
@@ -140,7 +142,7 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   rectified = imgL;
 
   cv::reprojectImageTo3D(disp, XYZ, Q);
-  XYZ *= 0.001;
+  XYZ *= 0.002;
 }
 
 // rescale output to 0-100
@@ -170,15 +172,33 @@ void constructNetwork(const std::string &dictionary, int width, int height) {
   //    << conv(width-40, height-40, 3, 16, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
   //    << conv(width-42, height-42, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type);
 
-  nn << conv(width, height, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(width-4, height-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     // << dropout((patch_size-8)*(patch_size-8)*8, 0.25)
-     << conv(width-8, height-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     << conv(width-12, height-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     // << dropout((patch_size-16)*(patch_size-16)*16, 0.25)
+  // nn << conv(width, height, 5, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-4, height-4, 5, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((patch_size-8)*(patch_size-8)*8, 0.25)
+  //    << conv(width-8, height-8, 5, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-12, height-12, 5, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((patch_size-16)*(patch_size-16)*16, 0.25)
+  //    << conv(width-16, height-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-18, height-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    // << dropout((patch_size-20)*(patch_size-20)*32, 0.25)
+  //    << conv(width-20, height-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+  //    << conv(width-22, height-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type);
+
+  nn << conv(width, height, 3, 3, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-2, height-2, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     // << dropout((width-4)*(height-4)*8, 0.25)
+     << conv(width-4, height-4, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-6, height-6, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     // << dropout((width-8)*(height-8)*8, 0.25)
+     << conv(width-8, height-8, 3, 8, 8, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-10, height-10, 3, 8, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     // << dropout((width-12)*(height-12)*16, 0.25)
+     << conv(width-12, height-12, 3, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     << conv(width-14, height-14, 3, 16, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
+     // << dropout((width-16)*(height-16)*16, 0.25)
      << conv(width-16, height-16, 3, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << conv(width-18, height-18, 3, 32, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
-     // << dropout((patch_size-20)*(patch_size-20)*32, 0.25)
+     // << dropout((width-20)*(height-20)*32, 0.25)
      << conv(width-20, height-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << conv(width-22, height-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type);
 
@@ -187,42 +207,42 @@ void constructNetwork(const std::string &dictionary, int width, int height) {
   ifs >> nn;
 }
 
-// void softmax(cv::Vec<double,5> x, cv::Vec<double,5> &y) {
-//   double min, max, denominator = 0;
-//   cv::minMaxLoc(x, &min, &max);
-//   for (int j = 0; j < 5; j++) {
-//     y[j] = std::exp(x[j] - max);
-//     denominator += y[j];
-//   }
-//   for (int j = 0; j < 5; j++) {
-//     y[j] /= denominator;
-//   }
-// }
-
-template <typename It>
-void softmax (It beg, It end)
-{
-  using VType = typename std::iterator_traits<It>::value_type;
-
-  static_assert(std::is_floating_point<VType>::value,
-                "Softmax function only applicable for floating types");
-
-  auto max_ele { *std::max_element(beg, end) };
-
-  std::transform(
-      beg,
-      end,
-      beg,
-      [&](VType x){ return std::exp(x - max_ele); });
-
-  VType exptot = std::accumulate(beg, end, 0.0);
-
-  std::transform(
-      beg,
-      end,
-      beg,
-      std::bind2nd(std::divides<VType>(), exptot));  
+void softmax(cv::Vec<double,5> x, cv::Vec<double,5> &y) {
+  double min, max, denominator = 0;
+  cv::minMaxLoc(x, &min, &max);
+  for (int j = 0; j < 5; j++) {
+    y[j] = std::exp(x[j] - max);
+    denominator += y[j];
+  }
+  for (int j = 0; j < 5; j++) {
+    y[j] /= denominator;
+  }
 }
+
+// template <typename It>
+// void softmax (It beg, It end)
+// {
+//   using VType = typename std::iterator_traits<It>::value_type;
+
+//   static_assert(std::is_floating_point<VType>::value,
+//                 "Softmax function only applicable for floating types");
+
+//   auto max_ele { *std::max_element(beg, end) };
+
+//   std::transform(
+//       beg,
+//       end,
+//       beg,
+//       [&](VType x){ return std::exp(x - max_ele); });
+
+//   VType exptot = std::accumulate(beg, end, 0.0);
+
+//   std::transform(
+//       beg,
+//       end,
+//       beg,
+//       std::bind2nd(std::divides<VType>(), exptot));  
+// }
 
 std::vector <cv::Point> imRegionalMax(cv::Mat input, int nLocMax, double threshold, int minDistBtwLocMax)
 {
@@ -390,7 +410,7 @@ void detectImg(const std::string &imgPath, double threshold) {
   int outputHeight  = inputHeight - (patchSize - 1);
 
   cv::Rect roi;
-  roi.x = 0;
+  roi.x = widthLeft;
   roi.y = heightUp;
   roi.width = inputWidth;
   roi.height = inputHeight;
@@ -469,6 +489,8 @@ void detectImg(const std::string &imgPath, double threshold) {
   if (cone.size()>0){
     for(size_t i=0; i<cone.size(); i++){
       position = (cone[i] + positionShift)*2;
+      // rectified(cv::Range(250,300),cv::Range(320,400)) = 0;
+      if(position.x>320 && position.x<400 && position.y>250) continue;
       point3D = XYZ.at<cv::Point3f>(position);
 
       label = probMapIndex.at<int>(cone[i]);
@@ -517,7 +539,7 @@ void detectImg(const std::string &imgPath, double threshold) {
   // std::cout << savePath << std::endl;
   diff = std::chrono::system_clock::now()-startTime;
   std::cout << "Savefile: " << diff.count() << " s\n";
-  startTime = std::chrono::system_clock::now();
+  std::cout << std::endl;
 }
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
@@ -526,11 +548,11 @@ void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath
   BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
   std::cout << imgPath.string() << std::endl;
   
-  auto startTime = std::chrono::system_clock::now();
+  // auto startTime = std::chrono::system_clock::now();
 	detectImg(imgPath.string(), threshold);
-	auto endTime = std::chrono::system_clock::now();
-	std::chrono::duration<double> diff = endTime-startTime;
-	std::cout << "Time: " << diff.count() << " s\n";
+	// auto endTime = std::chrono::system_clock::now();
+	// std::chrono::duration<double> diff = endTime-startTime;
+	// std::cout << "Time: " << diff.count() << " s\n";
   }
 }
 
