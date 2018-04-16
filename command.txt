@@ -21,7 +21,7 @@ python3 cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path m
 
 g++ train_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -mavx -o train_sliding_window
 
-./train_sliding_window all models/all_rgb 0.005 300 512
+./train_sliding_window all models/all_rgb 0.005 300 2048
 
 g++ sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o sliding_window
 
