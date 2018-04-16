@@ -26,8 +26,8 @@ int height = 180;
 int widthLeft = 0;
 int widthRight = 320;
 int inputWidth = widthRight-widthLeft;
-int heightUp = 90;//80;
-int heightDown = 180;//140;
+int heightUp = 80;//80;
+int heightDown = 140;//140;
 int inputHeight = heightDown-heightUp;
 
 // int patchSize = 45;
