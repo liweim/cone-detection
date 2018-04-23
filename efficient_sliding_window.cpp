@@ -79,15 +79,15 @@ void convertImage(cv::Mat img,
 void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   cv::Mat grayL, grayR;
 
-  cv::cvtColor(imgL, grayL, CV_BGR2GRAY);
-  cv::cvtColor(imgR, grayR, CV_BGR2GRAY);
+  cv::cvtColor(imgL, grayL, 6);
+  cv::cvtColor(imgR, grayR, 6);
 
   cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(); 
   sbm->setBlockSize(17);
   sbm->setNumDisparities(32);
 
   sbm->compute(grayL, grayR, disp);
-  cv::normalize(disp, disp, 0, 255, CV_MINMAX, CV_8U);
+  cv::normalize(disp, disp, 0, 255, 32, CV_8U);
 }
 
 void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
@@ -685,15 +685,15 @@ void detectImg2(const std::string &imgPath, double threshold) {
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
   constructNetwork(modelPath, inputWidth, inputHeight);
-  boost::filesystem::path dpath(imgFolderPath);
-  BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
-  std::cout << imgPath.string() << std::endl;
-  
-  // auto startTime = std::chrono::system_clock::now();
-	detectImg2(imgPath.string(), threshold);
-	// auto endTime = std::chrono::system_clock::now();
-	// std::chrono::duration<double> diff = endTime-startTime;
-	// std::cout << "Time: " << diff.count() << " s\n";
+    boost::filesystem::path dpath(imgFolderPath);
+    BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
+    std::cout << imgPath.string() << std::endl;
+    
+    auto startTime = std::chrono::system_clock::now();
+  	detectImg2(imgPath.string(), threshold);
+  	auto endTime = std::chrono::system_clock::now();
+  	std::chrono::duration<double> diff = endTime-startTime;
+  	std::cout << "Time: " << diff.count() << " s\n";
   }
 }
 

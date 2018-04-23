@@ -15,7 +15,7 @@ import cv2
 # writer.close()
 
 image_folder = 'annotations/snowy/results_best/'
-writer = skvideo.io.FFmpegWriter("annotations/snowy/result.mp4", 
+writer = skvideo.io.FFmpegWriter("tmp/results/snowy.mp4", 
 	inputdict={"-r": "8"}, 
 	outputdict={'-vcodec': 'libx264', '-b': '30000000'})
 for i in range(0,319):

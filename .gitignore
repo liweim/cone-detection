@@ -2,15 +2,5 @@
 .metadata
 .project
 .pydevproject
-calibration
-stereo_calibration
-video2
-old-sliding-windows/data
-old-sliding-windows/result
-old-sliding-windows/_pycache_
-old-sliding-windows/video2
-data_cifar10
-data_mnist
-real-test
 tmp
-command2.txt
+object_detection/tmp

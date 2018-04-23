@@ -43,3 +43,5 @@ g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-confi
 g++ get_depth.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o get_depth
 
 ./get_depth annotations/master-thesis/images
+
+g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -fopenmp -g -O2 -ltbb -o mobilenet
