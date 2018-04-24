@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
-	<filename>1.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/sunny/rectified/1.png</path>
+	<filename>104.png</filename>
+	<path>/home/yumeng/project/cone-detection/annotations/snowy/rectified/104.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,34 +17,34 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>92</xmin>
-			<ymin>252</ymin>
-			<xmax>127</xmax>
-			<ymax>294</ymax>
+			<xmin>269</xmin>
+			<ymin>217</ymin>
+			<xmax>294</xmax>
+			<ymax>247</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>blue</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>474</xmin>
+			<ymin>188</ymin>
+			<xmax>490</xmax>
+			<ymax>205</ymax>
 		</bndbox>
 	</object>
 	<object>
 		<name>yellow</name>
 		<pose>Unspecified</pose>
-		<truncated>0</truncated>
+		<truncated>1</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>421</xmin>
-			<ymin>251</ymin>
-			<xmax>452</xmax>
-			<ymax>295</ymax>
-		</bndbox>
-	</object>
-	<object>
-		<name>orange</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>279</xmin>
-			<ymin>214</ymin>
-			<xmax>298</xmax>
-			<ymax>240</ymax>
+			<xmin>599</xmin>
+			<ymin>249</ymin>
+			<xmax>640</xmax>
+			<ymax>300</ymax>
 		</bndbox>
 	</object>
 </annotation>
