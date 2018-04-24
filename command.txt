@@ -38,10 +38,12 @@ g++ test_model.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cfl
 
 g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o efficient_sliding_window
 
-./efficient_sliding_window models/all_efficient_rgb_best annotations/snowy/images 0.9
+./efficient_sliding_window models/all_efficient_rgb_best annotations/skidpad1/images 0.9
 
 g++ get_depth.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o get_depth
 
 ./get_depth annotations/master-thesis/images
 
-g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -fopenmp -g -O2 -ltbb -o mobilenet
+g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o mobilenet
+
+./mobilenet ../annotations/skidpad1/images 0.1

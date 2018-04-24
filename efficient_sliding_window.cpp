@@ -130,8 +130,9 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   cv::remap(imgL, imgL, rmap[0][0], rmap[0][1], cv::INTER_LINEAR);
   cv::remap(imgR, imgR, rmap[1][0], rmap[1][1], cv::INTER_LINEAR);
 
-  //cv::imwrite("2_left.png", imgL);
-  //cv::imwrite("2_right.png", imgR);
+  // cv::imwrite("tmp/imgL.png", imgL);
+  // cv::imwrite("tmp/imgR.png", imgR);
+  // return;
 
   blockMatching(disp, imgL, imgR);
 
@@ -685,8 +686,8 @@ void detectImg2(const std::string &imgPath, double threshold) {
 
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
   constructNetwork(modelPath, inputWidth, inputHeight);
-    boost::filesystem::path dpath(imgFolderPath);
-    BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
+  boost::filesystem::path dpath(imgFolderPath);
+  BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
     std::cout << imgPath.string() << std::endl;
     
     auto startTime = std::chrono::system_clock::now();
@@ -699,4 +700,5 @@ void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath
 
 int main(int argc, char **argv) {
   detectAllImg(argv[1], argv[2], atof(argv[3]));
+  // detectImg("annotations/skidpad1/images/36.png", 0.9);
 }
