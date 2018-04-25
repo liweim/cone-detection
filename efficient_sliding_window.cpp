@@ -535,6 +535,9 @@ void detectImg(const std::string &imgPath, double threshold) {
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
 
+  cv::line(rectified, cv::Point(0,184), cv::Point(640,184), cv::Scalar(255,255,255), 2);
+  cv::line(rectified, cv::Point(0,256), cv::Point(640,256), cv::Scalar(255,255,255), 2);
+
   savePath = imgPath.substr(0,index-7)+"/results/"+filename;
   cv::imwrite(savePath, rectified);
   // std::cout << savePath << std::endl;
@@ -543,6 +546,7 @@ void detectImg(const std::string &imgPath, double threshold) {
   std::cout << std::endl;
 }
 
+//only for Revolve
 void detectImg2(const std::string &imgPath, double threshold) {
   // auto startTime = std::chrono::system_clock::now();
 
@@ -676,6 +680,9 @@ void detectImg2(const std::string &imgPath, double threshold) {
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
 
+  cv::line(rectified, cv::Point(0,184), cv::Point(640,184), cv::Scalar(255,255,255), 2);
+  cv::line(rectified, cv::Point(0,256), cv::Point(640,256), cv::Scalar(255,255,255), 2);
+
   savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png";
   cv::imwrite(savePath, rectified);
   // std::cout << savePath << std::endl;
@@ -691,7 +698,7 @@ void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath
     std::cout << imgPath.string() << std::endl;
     
     auto startTime = std::chrono::system_clock::now();
-  	detectImg2(imgPath.string(), threshold);
+  	detectImg(imgPath.string(), threshold);
   	auto endTime = std::chrono::system_clock::now();
   	std::chrono::duration<double> diff = endTime-startTime;
   	std::cout << "Time: " << diff.count() << " s\n";

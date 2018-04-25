@@ -24,7 +24,6 @@ from random import random
 
 def xml_to_csv(path, split_rate=0.3):
 	xml_path = '../annotations/'+path+'/rectified'
-	img_path = '../annotations/'+path+'/images'
 
 	train_list = []
 	val_list = []
@@ -82,46 +81,46 @@ def split(df, group):
 
 
 def create_tf_example(group, path):
-    with tf.gfile.GFile(join(path, '{}'.format(group.filename)), 'rb') as fid:
-        encoded_jpg = fid.read()
-    encoded_jpg_io = io.BytesIO(encoded_jpg)
-    image = Image.open(encoded_jpg_io)
-    width, height = image.size
+	# print(join(path, '{}'.format(group.filename)))
+	with tf.gfile.GFile(join(path, '{}'.format(group.filename)), 'rb') as fid:
+		encoded_img = fid.read()
+	encoded_img_io = io.BytesIO(encoded_img)
+	image = Image.open(encoded_img_io)
+	width, height = image.size
 
-    filename = group.filename.encode('utf8')
-    image_format = b'png'
-    xmins = []
-    xmaxs = []
-    ymins = []
-    ymaxs = []
-    classes_text = []
-    classes = []
+	filename = group.filename.encode('utf8')
+	image_format = b'png'
+	xmins = []
+	xmaxs = []
+	ymins = []
+	ymaxs = []
+	classes_text = []
+	classes = []
 
-    for index, row in group.object.iterrows():
-    	if class_text_to_int(row['class']) > 0:
-		    row['class'] = str(row['class'])
-		    xmins.append(row['xmin'] / width)
-		    xmaxs.append(row['xmax'] / width)
-		    ymins.append(row['ymin'] / height)
-		    ymaxs.append(row['ymax'] / height)
-		    classes_text.append(row['class'].encode('utf8'))
-		    classes.append(class_text_to_int(row['class']))
+	for index, row in group.object.iterrows():
+	    row['class'] = str(row['class'])
+	    xmins.append(row['xmin'] / width)
+	    xmaxs.append(row['xmax'] / width)
+	    ymins.append(row['ymin'] / height)
+	    ymaxs.append(row['ymax'] / height)
+	    classes_text.append(row['class'].encode('utf8'))
+	    classes.append(class_text_to_int(row['class']))
 
-    tf_example = tf.train.Example(features=tf.train.Features(feature={
-        'image/height': dataset_util.int64_feature(height),
-        'image/width': dataset_util.int64_feature(width),
-        'image/filename': dataset_util.bytes_feature(filename),
-        'image/source_id': dataset_util.bytes_feature(filename),
-        'image/encoded': dataset_util.bytes_feature(encoded_jpg),
-        'image/format': dataset_util.bytes_feature(image_format),
-        'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
-        'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
-        'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
-        'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
-        'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
-        'image/object/class/label': dataset_util.int64_list_feature(classes),
-    }))
-    return tf_example
+	tf_example = tf.train.Example(features=tf.train.Features(feature={
+	    'image/height': dataset_util.int64_feature(height),
+	    'image/width': dataset_util.int64_feature(width),
+	    'image/filename': dataset_util.bytes_feature(filename),
+	    'image/source_id': dataset_util.bytes_feature(filename),
+	    'image/encoded': dataset_util.bytes_feature(encoded_img),
+	    'image/format': dataset_util.bytes_feature(image_format),
+	    'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
+	    'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
+	    'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
+	    'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+	    'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+	    'image/object/class/label': dataset_util.int64_list_feature(classes),
+	}))
+	return tf_example
 
 def xml2tfRecord(paths, split_rate):
 	for path in paths:
@@ -144,4 +143,5 @@ def xml2tfRecord(paths, split_rate):
 		print('Successfully created the TFRecords: {}'.format(output_path))
 
 if __name__ == '__main__':
-    xml2tfRecord(paths = ['skidpad1', 'sunnny', 'rainy', 'rainy2'], split_rate = 0.3)
+    # xml2tfRecord(paths = ['skidpad1', 'sunnny', 'rainy', 'rainy2'], split_rate = 0.3)
+    xml2tfRecord(paths = ['skidpad1'], split_rate = 0.3)
