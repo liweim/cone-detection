@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>191.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/snowy/rectified/191.png</path>
+	<path>/home/yumeng/project/cone-detection/annotations/skidpad1/rectified/191.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,9 +17,9 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>231</xmin>
+			<xmin>236</xmin>
 			<ymin>224</ymin>
-			<xmax>259</xmax>
+			<xmax>264</xmax>
 			<ymax>259</ymax>
 		</bndbox>
 	</object>
@@ -29,10 +29,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>436</xmin>
+			<xmin>440</xmin>
 			<ymin>195</ymin>
-			<xmax>449</xmax>
-			<ymax>214</ymax>
+			<xmax>453</xmax>
+			<ymax>212</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -41,10 +41,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>486</xmin>
+			<xmin>490</xmin>
 			<ymin>193</ymin>
-			<xmax>497</xmax>
-			<ymax>209</ymax>
+			<xmax>501</xmax>
+			<ymax>210</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -53,10 +53,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>534</xmin>
-			<ymin>186</ymin>
-			<xmax>544</xmax>
-			<ymax>198</ymax>
+			<xmin>536</xmin>
+			<ymin>183</ymin>
+			<xmax>548</xmax>
+			<ymax>195</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -65,10 +65,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>620</xmin>
+			<xmin>625</xmin>
 			<ymin>190</ymin>
-			<xmax>632</xmax>
-			<ymax>204</ymax>
+			<xmax>636</xmax>
+			<ymax>201</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -77,10 +77,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>520</xmin>
+			<xmin>524</xmin>
 			<ymin>250</ymin>
 			<xmax>564</xmax>
-			<ymax>306</ymax>
+			<ymax>303</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -89,10 +89,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>582</xmin>
+			<xmin>587</xmin>
 			<ymin>211</ymin>
 			<xmax>605</xmax>
-			<ymax>236</ymax>
+			<ymax>230</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -101,9 +101,9 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>285</xmin>
+			<xmin>288</xmin>
 			<ymin>182</ymin>
-			<xmax>295</xmax>
+			<xmax>300</xmax>
 			<ymax>199</ymax>
 		</bndbox>
 	</object>
@@ -113,10 +113,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>319</xmin>
+			<xmin>323</xmin>
 			<ymin>182</ymin>
-			<xmax>328</xmax>
-			<ymax>194</ymax>
+			<xmax>334</xmax>
+			<ymax>193</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -125,10 +125,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>391</xmin>
+			<xmin>397</xmin>
 			<ymin>188</ymin>
-			<xmax>401</xmax>
-			<ymax>202</ymax>
+			<xmax>405</xmax>
+			<ymax>201</ymax>
 		</bndbox>
 	</object>
 </annotation>

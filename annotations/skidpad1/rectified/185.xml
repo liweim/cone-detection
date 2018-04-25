@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>185.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/snowy/rectified/185.png</path>
+	<path>/home/yumeng/project/cone-detection/annotations/skidpad1/rectified/185.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>323</xmin>
+			<xmin>326</xmin>
 			<ymin>192</ymin>
-			<xmax>343</xmax>
-			<ymax>217</ymax>
+			<xmax>347</xmax>
+			<ymax>216</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -29,10 +29,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>482</xmin>
-			<ymin>180</ymin>
-			<xmax>495</xmax>
-			<ymax>196</ymax>
+			<xmin>488</xmin>
+			<ymin>179</ymin>
+			<xmax>497</xmax>
+			<ymax>193</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -41,10 +41,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>533</xmin>
+			<xmin>537</xmin>
 			<ymin>176</ymin>
-			<xmax>544</xmax>
-			<ymax>194</ymax>
+			<xmax>547</xmax>
+			<ymax>193</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -53,10 +53,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>515</xmin>
+			<xmin>518</xmin>
 			<ymin>211</ymin>
-			<xmax>535</xmax>
-			<ymax>241</ymax>
+			<xmax>541</xmax>
+			<ymax>240</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -65,10 +65,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>608</xmin>
+			<xmin>611</xmin>
 			<ymin>192</ymin>
-			<xmax>624</xmax>
-			<ymax>213</ymax>
+			<xmax>626</xmax>
+			<ymax>211</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -77,9 +77,9 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>445</xmin>
-			<ymin>173</ymin>
-			<xmax>456</xmax>
+			<xmin>450</xmin>
+			<ymin>174</ymin>
+			<xmax>459</xmax>
 			<ymax>186</ymax>
 		</bndbox>
 	</object>
@@ -89,9 +89,9 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>352</xmin>
+			<xmin>355</xmin>
 			<ymin>169</ymin>
-			<xmax>359</xmax>
+			<xmax>364</xmax>
 			<ymax>182</ymax>
 		</bndbox>
 	</object>

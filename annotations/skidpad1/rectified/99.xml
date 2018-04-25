@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>99.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/snowy/rectified/99.png</path>
+	<path>/home/yumeng/project/cone-detection/annotations/skidpad1/rectified/99.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>346</xmin>
+			<xmin>356</xmin>
 			<ymin>203</ymin>
-			<xmax>369</xmax>
-			<ymax>227</ymax>
+			<xmax>372</xmax>
+			<ymax>222</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -29,10 +29,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>525</xmin>
+			<xmin>529</xmin>
 			<ymin>186</ymin>
-			<xmax>540</xmax>
-			<ymax>203</ymax>
+			<xmax>545</xmax>
+			<ymax>202</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -41,10 +41,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>582</xmin>
+			<xmin>587</xmin>
 			<ymin>221</ymin>
 			<xmax>617</xmax>
-			<ymax>260</ymax>
+			<ymax>256</ymax>
 		</bndbox>
 	</object>
 </annotation>
