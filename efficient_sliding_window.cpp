@@ -79,15 +79,15 @@ void convertImage(cv::Mat img,
 void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   cv::Mat grayL, grayR;
 
-  cv::cvtColor(imgL, grayL, CV_BGR2GRAY);
-  cv::cvtColor(imgR, grayR, CV_BGR2GRAY);
+  cv::cvtColor(imgL, grayL, 6);
+  cv::cvtColor(imgR, grayR, 6);
 
   cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(); 
   sbm->setBlockSize(17);
   sbm->setNumDisparities(32);
 
   sbm->compute(grayL, grayR, disp);
-  cv::normalize(disp, disp, 0, 255, CV_MINMAX, CV_8U);
+  cv::normalize(disp, disp, 0, 255, 32, CV_8U);
 }
 
 void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
@@ -130,8 +130,9 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   cv::remap(imgL, imgL, rmap[0][0], rmap[0][1], cv::INTER_LINEAR);
   cv::remap(imgR, imgR, rmap[1][0], rmap[1][1], cv::INTER_LINEAR);
 
-  //cv::imwrite("2_left.png", imgL);
-  //cv::imwrite("2_right.png", imgR);
+  // cv::imwrite("tmp/imgL.png", imgL);
+  // cv::imwrite("tmp/imgR.png", imgR);
+  // return;
 
   blockMatching(disp, imgL, imgR);
 
@@ -534,6 +535,9 @@ void detectImg(const std::string &imgPath, double threshold) {
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
 
+  cv::line(rectified, cv::Point(0,184), cv::Point(640,184), cv::Scalar(255,255,255), 2);
+  cv::line(rectified, cv::Point(0,256), cv::Point(640,256), cv::Scalar(255,255,255), 2);
+
   savePath = imgPath.substr(0,index-7)+"/results/"+filename;
   cv::imwrite(savePath, rectified);
   // std::cout << savePath << std::endl;
@@ -542,20 +546,166 @@ void detectImg(const std::string &imgPath, double threshold) {
   std::cout << std::endl;
 }
 
+//only for Revolve
+void detectImg2(const std::string &imgPath, double threshold) {
+  // auto startTime = std::chrono::system_clock::now();
+
+  int outputWidth  = inputWidth - (patchSize - 1);
+  int outputHeight  = inputHeight - (patchSize - 1);
+
+  cv::Rect roi;
+  roi.x = widthLeft;
+  roi.y = heightUp;
+  roi.width = inputWidth;
+  roi.height = inputHeight;
+  auto img = cv::imread(imgPath);
+  // std::chrono::duration<double> diff = std::chrono::system_clock::now()-startTime;
+  // std::cout << "Imread: " << diff.count() << " s\n";
+  // startTime = std::chrono::system_clock::now();
+
+  cv::Mat rectified;
+  // reconstruction(imgSource, Q, disp, rectified, XYZ);
+  // diff = std::chrono::system_clock::now()-startTime;
+  // std::cout << "Reconstruction: " << diff.count() << " s\n";
+  // startTime = std::chrono::system_clock::now();
+
+  int index;
+  std::string filename, savePath;
+
+  index = imgPath.find_last_of('/');
+  filename = imgPath.substr(index+1);
+  // savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
+  // cv::imwrite(savePath, rectified);
+
+  img = img.rowRange(120,488);
+  cv::resize(img, rectified, cv::Size(640, 360));
+  cv::resize(rectified, img, cv::Size(width, height));
+  auto patchImg = img(roi);
+
+  // convert imagefile to vec_t
+  tiny_dnn::vec_t data;
+  convertImage(patchImg, inputWidth, inputHeight, data);
+
+  // recognize
+  auto prob = nn.predict(data);
+  // diff = std::chrono::system_clock::now()-startTime;
+  // std::cout << "Predict: " << diff.count() << " s\n";
+  // startTime = std::chrono::system_clock::now();
+
+  cv::Mat probMap = cv::Mat::zeros(outputHeight, outputWidth, CV_64FC(5));
+  for (int c = 0; c < 5; ++c)
+    for (int y = 0; y < outputHeight; ++y)
+      for (int x = 0; x < outputWidth; ++x)
+        probMap.at<cv::Vec<double,5>>(y, x)[c] = prob[c * outputWidth * outputHeight + y * outputWidth + x];
+         
+  cv::Vec<double,5> probSoftmax(5);
+  cv::Mat probMapSoftmax = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
+  cv::Mat probMapIndex = cv::Mat::zeros(outputHeight, outputWidth, CV_32S);
+  cv::Mat probMapSplit[4] = cv::Mat::zeros(outputHeight, outputWidth, CV_64F);
+  for (int y = 0; y < outputHeight; ++y){
+    for (int x = 0; x < outputWidth; ++x){
+      softmax(probMap.at<cv::Vec<double,5>>(y, x), probSoftmax);
+      for (int c = 0; c < 4; ++c)
+        if(probSoftmax[c+1] > threshold){
+          probMapSoftmax.at<double>(y, x) = probSoftmax[c+1];
+          probMapIndex.at<int>(y, x) = c+1;
+          probMapSplit[c].at<double>(y, x) = probSoftmax[c+1];
+        }
+    }
+  }
+  // diff = std::chrono::system_clock::now()-startTime;
+  // std::cout << "Softmax: " << diff.count() << " s\n";
+  // startTime = std::chrono::system_clock::now();
+
+  std::vector <cv::Point> cone;
+  cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
+  int label;
+  std::string labelName;
+  cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
+  // diff = std::chrono::system_clock::now()-startTime;
+  // std::cout << "Local maxima: " << diff.count() << " s\n";
+  // startTime = std::chrono::system_clock::now();
+
+  std::ofstream savefile;
+  int index2 = filename.find_last_of('.');
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
+  // std::cout << savePath << std::endl;
+  savefile.open(savePath);
+  // cv::Point3f point3D;
+  if (cone.size()>0){
+    for(size_t i=0; i<cone.size(); i++){
+      position = (cone[i] + positionShift)*2;
+      // rectified(cv::Range(250,300),cv::Range(320,400)) = 0;
+      // if(position.x>320 && position.x<400 && position.y>250) continue;
+      // point3D = XYZ.at<cv::Point3f>(position);
+
+      label = probMapIndex.at<int>(cone[i]);
+      if (label == 1){
+        cv::circle(rectified, position, 3, {255, 0, 0}, -1);
+        labelName = "blue";
+      }
+      if (label == 2){
+        cv::circle(rectified, position, 3, {0, 255, 255}, -1);
+        labelName = "yellow";
+      }
+      if (label == 3){
+        cv::circle(rectified, position, 3, {0, 165, 255}, -1);
+        labelName = "orange";
+      }
+      if (label == 4){
+        cv::circle(rectified, position, 6, {0, 0, 255}, -1);
+        labelName = "big orange";
+      }
+      
+      std::cout << position << " " << labelName << std::endl;
+      savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+labelName+"\n";   
+      
+    }
+  }
+  savefile.close();
+  
+  // cv::namedWindow("probMapSoftmax", cv::WINDOW_NORMAL);
+  // cv::imshow("probMapSoftmax", probMapSoftmax);
+  // cv::namedWindow("img", cv::WINDOW_NORMAL);
+  // cv::imshow("img", rectified);
+  // cv::waitKey(0);
+
+  // cv::namedWindow("rectified", cv::WINDOW_NORMAL);
+  // cv::imshow("rectified", rectified);
+  // cv::namedWindow("0", cv::WINDOW_NORMAL);
+  // cv::imshow("0", probMapSplit[0]);
+  // cv::namedWindow("1", cv::WINDOW_NORMAL);
+  // cv::imshow("1", probMapSplit[1]);
+  // cv::namedWindow("2", cv::WINDOW_NORMAL);
+  // cv::imshow("2", probMapSplit[2]);
+  // cv::waitKey(0);
+
+  cv::line(rectified, cv::Point(0,184), cv::Point(640,184), cv::Scalar(255,255,255), 2);
+  cv::line(rectified, cv::Point(0,256), cv::Point(640,256), cv::Scalar(255,255,255), 2);
+
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png";
+  cv::imwrite(savePath, rectified);
+  // std::cout << savePath << std::endl;
+  // diff = std::chrono::system_clock::now()-startTime;
+  // std::cout << "Savefile: " << diff.count() << " s\n";
+  // std::cout << std::endl;
+}
+
 void detectAllImg(const std::string &modelPath, const std::string &imgFolderPath, double threshold){
   constructNetwork(modelPath, inputWidth, inputHeight);
   boost::filesystem::path dpath(imgFolderPath);
   BOOST_FOREACH(const boost::filesystem::path& imgPath, std::make_pair(boost::filesystem::directory_iterator(dpath), boost::filesystem::directory_iterator())) {
-  std::cout << imgPath.string() << std::endl;
-  
-  // auto startTime = std::chrono::system_clock::now();
-	detectImg(imgPath.string(), threshold);
-	// auto endTime = std::chrono::system_clock::now();
-	// std::chrono::duration<double> diff = endTime-startTime;
-	// std::cout << "Time: " << diff.count() << " s\n";
+    std::cout << imgPath.string() << std::endl;
+    
+    auto startTime = std::chrono::system_clock::now();
+  	detectImg(imgPath.string(), threshold);
+  	auto endTime = std::chrono::system_clock::now();
+  	std::chrono::duration<double> diff = endTime-startTime;
+  	std::cout << "Time: " << diff.count() << " s\n";
   }
 }
 
 int main(int argc, char **argv) {
   detectAllImg(argv[1], argv[2], atof(argv[3]));
+  // detectImg("annotations/skidpad1/images/36.png", 0.9);
 }
