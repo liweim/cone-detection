@@ -621,7 +621,7 @@ void detectImg2(const std::string &imgPath, double threshold) {
   cv::Point position, positionShift = cv::Point(patchRadius, patchRadius+heightUp);
   int label;
   std::string labelName;
-  cone = imRegionalMax(probMapSoftmax, 10, threshold, 20);
+  cone = imRegionalMax(probMapSoftmax, 5, threshold, 20);
   // diff = std::chrono::system_clock::now()-startTime;
   // std::cout << "Local maxima: " << diff.count() << " s\n";
   // startTime = std::chrono::system_clock::now();

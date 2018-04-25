@@ -49,13 +49,13 @@ def xml_to_csv(path, split_rate=0.3):
 						)
 				tmp_list.append(value)
 
-				img_path = '../annotations/'+path+'/rectified/'+value[0]
-				print(img_path)
-				img = cv2.imread(img_path)
-				cv2.rectangle(img, (value[4],value[5]), (value[6],value[7]), (0,0,255), 1)
-				cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-				cv2.imshow('img',img)
-				cv2.waitKey(0)
+				# img_path = '../annotations/'+path+'/rectified/'+value[0]
+				# print(img_path)
+				# img = cv2.imread(img_path)
+				# cv2.rectangle(img, (value[4],value[5]), (value[6],value[7]), (0,0,255), 1)
+				# cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+				# cv2.imshow('img',img)
+				# cv2.waitKey(0)
 
 
 			except ValueError:
@@ -155,4 +155,4 @@ def xml2tfRecord(paths, split_rate):
 
 if __name__ == '__main__':
     # xml2tfRecord(paths = ['skidpad1', 'sunnny', 'rainy', 'rainy2'], split_rate = 0.3)
-    xml2tfRecord(paths = ['skidpad1'], split_rate = 0.3)
+    xml2tfRecord(paths = ['rainy'], split_rate = 0.3)

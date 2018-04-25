@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>99.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/skidpad1/rectified/99.png</path>
+	<path>/media/weiming/Ny volym/ubuntu-project/cone-detection/annotations/skidpad1/rectified/99.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -17,10 +17,10 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>356</xmin>
+			<xmin>353</xmin>
 			<ymin>203</ymin>
 			<xmax>372</xmax>
-			<ymax>222</ymax>
+			<ymax>226</ymax>
 		</bndbox>
 	</object>
 	<object>
