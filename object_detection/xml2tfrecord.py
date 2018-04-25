@@ -6,6 +6,7 @@ import os
 import io
 import pandas as pd
 import tensorflow as tf
+import cv2
 
 from PIL import Image
 from object_detection.utils import dataset_util
@@ -28,31 +29,41 @@ def xml_to_csv(path, split_rate=0.3):
 	train_list = []
 	val_list = []
 	for xml_file in glob.glob(xml_path + '/*.xml'):
-	    tmp_list=[]
-	    tree = ET.parse(xml_file)
-	    root = tree.getroot()
-	    for member in root.findall('object'):
-	        try:
-	            value = (root.find('filename').text,
-	                     int(root.find('size')[0].text),
-	                     int(root.find('size')[1].text),
-	                     member[0].text,
-	                     # int(int(member[4][0].text)*resize_rate),
-	                     # min(int(int(member[4][1].text)*resize_rate-heightUp),height),
-	                     # int(int(member[4][2].text)*resize_rate),
-	                     # min(int(int(member[4][3].text)*resize_rate-heightUp),height)
-	                     int(member[4][0].text),
-	                     int(member[4][1].text),
-	                     int(member[4][2].text),
-	                     int(member[4][3].text)
-	                     )
-	            tmp_list.append(value)
-	        except ValueError:
-	            pass
-	    if random()>split_rate:
-	        train_list+=tmp_list
-	    else:
-	        val_list+=tmp_list
+		tmp_list=[]
+		tree = ET.parse(xml_file)
+		root = tree.getroot()
+		for member in root.findall('object'):
+			try:
+				value = (root.find('filename').text,
+						int(root.find('size')[0].text),
+						int(root.find('size')[1].text),
+						member[0].text,
+						# int(int(member[4][0].text)*resize_rate),
+						# min(int(int(member[4][1].text)*resize_rate-heightUp),height),
+						# int(int(member[4][2].text)*resize_rate),
+						# min(int(int(member[4][3].text)*resize_rate-heightUp),height)
+						int(member[4][0].text),
+						int(member[4][1].text),
+						int(member[4][2].text),
+						int(member[4][3].text)
+						)
+				tmp_list.append(value)
+
+				img_path = '../annotations/'+path+'/rectified/'+value[0]
+				print(img_path)
+				img = cv2.imread(img_path)
+				cv2.rectangle(img, (value[4],value[5]), (value[6],value[7]), (0,0,255), 1)
+				cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+				cv2.imshow('img',img)
+				cv2.waitKey(0)
+
+
+			except ValueError:
+			    pass
+		if random()>split_rate:
+		    train_list+=tmp_list
+		else:
+		    val_list+=tmp_list
 	column_name = ['filename', 'width', 'height', 'class', 'xmin', 'ymin', 'xmax', 'ymax']
 
 	train_df = pd.DataFrame(train_list, columns=column_name)
@@ -130,7 +141,7 @@ def xml2tfRecord(paths, split_rate):
 		record_path = stuff+'.record'
 		writer = tf.python_io.TFRecordWriter(record_path)
 		for path in paths:
-			img_path = '../annotations/'+path+'/images'
+			img_path = '../annotations/'+path+'/rectified'
 			csv_path = stuff+'_'+path+'.csv'
 
 			examples = pd.read_csv(csv_path)
