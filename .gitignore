@@ -4,3 +4,4 @@
 .pydevproject
 tmp
 object_detection/tmp
+object_detection/ssd_mobilenet_v1_coco_11_06_2017

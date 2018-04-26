@@ -6,7 +6,6 @@ import os
 import io
 import pandas as pd
 import tensorflow as tf
-import cv2
 
 from PIL import Image
 from object_detection.utils import dataset_util
@@ -18,58 +17,42 @@ import xml.etree.ElementTree as ET
 from shutil import copyfile, rmtree
 from random import random
 
-# resize_rate = 1
-# heightUp = 0
-# height = 360
-# width = 640
+def xml_to_csv(xml_path, split_rate=0.2):
+    data_path = os.path.split(xml_path)[0]
+    img_path = join(data_path,'images')
 
-def xml_to_csv(path, split_rate=0.3):
-	xml_path = '../annotations/'+path+'/rectified'
+    train_list = []
+    val_list = []
+    for xml_file in glob.glob(xml_path + '/*.xml'):
+        tmp_list=[]
+        tree = ET.parse(xml_file)
+        root = tree.getroot()
+        for member in root.findall('object'):
+            try:
+                value = (root.find('filename').text,
+                         int(root.find('size')[0].text),
+                         int(root.find('size')[1].text),
+                         member[0].text,
+                         int(member[4][0].text),
+                         int(member[4][1].text),
+                         int(member[4][2].text),
+                         int(member[4][3].text)
+                         )
+                tmp_list.append(value)
+            except ValueError:
+                pass
+        if random()>split_rate:
+            train_list+=tmp_list
+        else:
+            val_list+=tmp_list
+    column_name = ['filename', 'width', 'height', 'class', 'xmin', 'ymin', 'xmax', 'ymax']
 
-	train_list = []
-	val_list = []
-	for xml_file in glob.glob(xml_path + '/*.xml'):
-		tmp_list=[]
-		tree = ET.parse(xml_file)
-		root = tree.getroot()
-		for member in root.findall('object'):
-			try:
-				value = (root.find('filename').text,
-						int(root.find('size')[0].text),
-						int(root.find('size')[1].text),
-						member[0].text,
-						# int(int(member[4][0].text)*resize_rate),
-						# min(int(int(member[4][1].text)*resize_rate-heightUp),height),
-						# int(int(member[4][2].text)*resize_rate),
-						# min(int(int(member[4][3].text)*resize_rate-heightUp),height)
-						int(member[4][0].text),
-						int(member[4][1].text),
-						int(member[4][2].text),
-						int(member[4][3].text)
-						)
-				tmp_list.append(value)
-
-				# img_path = '../annotations/'+path+'/rectified/'+value[0]
-				# print(img_path)
-				# img = cv2.imread(img_path)
-				# cv2.rectangle(img, (value[4],value[5]), (value[6],value[7]), (0,0,255), 1)
-				# cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-				# cv2.imshow('img',img)
-				# cv2.waitKey(0)
-
-
-			except ValueError:
-			    pass
-		if random()>split_rate:
-		    train_list+=tmp_list
-		else:
-		    val_list+=tmp_list
-	column_name = ['filename', 'width', 'height', 'class', 'xmin', 'ymin', 'xmax', 'ymax']
-
-	train_df = pd.DataFrame(train_list, columns=column_name)
-	train_df.to_csv(join('tmp/train_'+path+'.csv'), index=None)
-	val_df = pd.DataFrame(val_list, columns=column_name)
-	val_df.to_csv(join('tmp/val_'+path+'.csv'), index=None)
+    train_df = pd.DataFrame(train_list, columns=column_name)
+    train_df.to_csv(join('tmp/train.csv'), index=None)
+    val_df = pd.DataFrame(val_list, columns=column_name)
+    val_df.to_csv(join('tmp/val.csv'), index=None)
+    print('Successfully converted xml to csv.')
+    return
 
 # TO-DO replace this with label map
 def class_text_to_int(row_label):
@@ -92,67 +75,65 @@ def split(df, group):
 
 
 def create_tf_example(group, path):
-	# print(join(path, '{}'.format(group.filename)))
-	with tf.gfile.GFile(join(path, '{}'.format(group.filename)), 'rb') as fid:
-		encoded_img = fid.read()
-	encoded_img_io = io.BytesIO(encoded_img)
-	image = Image.open(encoded_img_io)
-	width, height = image.size
+    with tf.gfile.GFile(join(path, '{}'.format(group.filename)), 'rb') as fid:
+        encoded_jpg = fid.read()
+    encoded_jpg_io = io.BytesIO(encoded_jpg)
+    image = Image.open(encoded_jpg_io)
+    width, height = image.size
 
-	filename = group.filename.encode('utf8')
-	image_format = b'png'
-	xmins = []
-	xmaxs = []
-	ymins = []
-	ymaxs = []
-	classes_text = []
-	classes = []
+    filename = group.filename.encode('utf8')
+    image_format = b'png'
+    xmins = []
+    xmaxs = []
+    ymins = []
+    ymaxs = []
+    classes_text = []
+    classes = []
 
-	for index, row in group.object.iterrows():
-	    row['class'] = str(row['class'])
-	    xmins.append(row['xmin'] / width)
-	    xmaxs.append(row['xmax'] / width)
-	    ymins.append(row['ymin'] / height)
-	    ymaxs.append(row['ymax'] / height)
-	    classes_text.append(row['class'].encode('utf8'))
-	    classes.append(class_text_to_int(row['class']))
+    for index, row in group.object.iterrows():
+        row['class'] = str(row['class'])
+        xmins.append(row['xmin'] / width)
+        xmaxs.append(row['xmax'] / width)
+        ymins.append(row['ymin'] / height)
+        ymaxs.append(row['ymax'] / height)
+        classes_text.append(row['class'].encode('utf8'))
+        classes.append(class_text_to_int(row['class']))
 
-	tf_example = tf.train.Example(features=tf.train.Features(feature={
-	    'image/height': dataset_util.int64_feature(height),
-	    'image/width': dataset_util.int64_feature(width),
-	    'image/filename': dataset_util.bytes_feature(filename),
-	    'image/source_id': dataset_util.bytes_feature(filename),
-	    'image/encoded': dataset_util.bytes_feature(encoded_img),
-	    'image/format': dataset_util.bytes_feature(image_format),
-	    'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
-	    'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
-	    'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
-	    'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
-	    'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
-	    'image/object/class/label': dataset_util.int64_list_feature(classes),
-	}))
-	return tf_example
+    tf_example = tf.train.Example(features=tf.train.Features(feature={
+        'image/height': dataset_util.int64_feature(height),
+        'image/width': dataset_util.int64_feature(width),
+        'image/filename': dataset_util.bytes_feature(filename),
+        'image/source_id': dataset_util.bytes_feature(filename),
+        'image/encoded': dataset_util.bytes_feature(encoded_jpg),
+        'image/format': dataset_util.bytes_feature(image_format),
+        'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
+        'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
+        'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
+        'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+        'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+        'image/object/class/label': dataset_util.int64_list_feature(classes),
+    }))
+    return tf_example
 
-def xml2tfRecord(paths, split_rate):
-	for path in paths:
-		xml_to_csv(path, split_rate)
-	stuffs=['tmp/train', 'tmp/val']
-	for stuff in stuffs:
-		record_path = stuff+'.record'
-		writer = tf.python_io.TFRecordWriter(record_path)
-		for path in paths:
-			img_path = '../annotations/'+path+'/rectified'
-			csv_path = stuff+'_'+path+'.csv'
+def xml2tfRecord(xml_path, split_rate):
+    xml_to_csv(xml_path, split_rate)
+    dirname = os.path.split(xml_path)[0]
+    img_path = join(dirname, 'images')
+    stuffs=['tmp/train', 'tmp/val']
 
-			examples = pd.read_csv(csv_path)
-			grouped = split(examples, 'filename')
-			for group in grouped:
-			    tf_example = create_tf_example(group, img_path)
-			    writer.write(tf_example.SerializeToString())
-		writer.close()
-		output_path = join(os.getcwd(), record_path)
-		print('Successfully created the TFRecords: {}'.format(output_path))
+    for stuff in stuffs:
+        csv_path = stuff+'.csv'
+        record_path = stuff+'.record'
+
+        writer = tf.python_io.TFRecordWriter(record_path)
+        examples = pd.read_csv(csv_path)
+        grouped = split(examples, 'filename')
+        for group in grouped:
+            tf_example = create_tf_example(group, img_path)
+            writer.write(tf_example.SerializeToString())
+        writer.close()
+        output_path = join(os.getcwd(), record_path)
+        print('Successfully created the TFRecords: {}'.format(output_path))
 
 if __name__ == '__main__':
-    # xml2tfRecord(paths = ['skidpad1', 'sunnny', 'rainy', 'rainy2'], split_rate = 0.3)
-    xml2tfRecord(paths = ['rainy'], split_rate = 0.3)
+    xml2tfRecord(xml_path='tmp/annotations', split_rate=0.3)
