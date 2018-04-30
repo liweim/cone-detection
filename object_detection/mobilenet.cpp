@@ -38,24 +38,40 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
 }
 
 void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
-  cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
-    350.6847, 0, 332.4661,
-    0, 350.0606, 163.7461,
-    0, 0, 1);
-  cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.1674, 0.0158, 0.0057, 0, 0);
-  cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
-    351.9498, 0, 329.4456,
-    0, 351.0426, 179.0179,
-    0, 0, 1);
-  cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.1700, 0.0185, 0.0048, 0, 0);
-  cv::Mat R = (cv::Mat_<double>(3, 3) <<
-    0.9997, 0.0015, 0.0215,
-    -0.0015, 1, -0.00008,
-    -0.0215, 0.00004, 0.9997);
-  //cv::transpose(R, R);
-  cv::Mat T = (cv::Mat_<double>(3, 1) << -119.1807, 0.1532, 1.1225);
+  // cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
+  //   350.6847, 0, 332.4661,
+  //   0, 350.0606, 163.7461,
+  //   0, 0, 1);
+  // cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.1674, 0.0158, 0.0057, 0, 0);
+  // cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
+  //   351.9498, 0, 329.4456,
+  //   0, 351.0426, 179.0179,
+  //   0, 0, 1);
+  // cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.1700, 0.0185, 0.0048, 0, 0);
+  // cv::Mat R = (cv::Mat_<double>(3, 3) <<
+  //   0.9997, 0.0015, 0.0215,
+  //   -0.0015, 1, -0.00008,
+  //   -0.0215, 0.00004, 0.9997);
+  // cv::Mat T = (cv::Mat_<double>(3, 1) << -119.1807, 0.1532, 1.1225);
+  // cv::Size stdSize = cv::Size(640, 360);
 
-  cv::Size stdSize = cv::Size(640, 360);
+  //official
+  cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
+    349.891, 0, 334.352,
+    0, 349.891, 187.937,
+    0, 0, 1);
+  cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.173042, 0.0258831, 0, 0, 0);
+  cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
+    350.112, 0, 345.88,
+    0, 350.112, 189.891,
+    0, 0, 1);
+  cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.174209, 0.026726, 0, 0, 0);
+  cv::Mat rodrigues = (cv::Mat_<double>(3, 1) << -0.0132397, 0.021005, -0.00121284);
+  cv::Mat R;
+  cv::Rodrigues(rodrigues, R);
+  cv::Mat T = (cv::Mat_<double>(3, 1) << -0.12, 0, 0);
+  cv::Size stdSize = cv::Size(672, 376);
+
   int width = img.cols;
   int height = img.rows;
   cv::Mat imgL(img, cv::Rect(0, 0, width/2, height));
@@ -89,7 +105,6 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   rectified = imgL;
 
   cv::reprojectImageTo3D(disp, XYZ, Q);
-  XYZ *= 0.002;
 }
 
 void object_detection(String imgPath, float confidenceThreshold) {
@@ -172,7 +187,7 @@ void object_detection(String imgPath, float confidenceThreshold) {
         }
     }
 
-    cv::resize(rectified, rectified, cv::Size(640,360));
+    cv::resize(rectified, rectified, cv::Size(672,376));
 
     std::string filename, savePath;
     int index = imgPath.find_last_of('/');

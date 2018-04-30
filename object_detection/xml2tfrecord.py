@@ -75,65 +75,67 @@ def split(df, group):
 
 
 def create_tf_example(group, path):
-    with tf.gfile.GFile(join(path, '{}'.format(group.filename)), 'rb') as fid:
-        encoded_jpg = fid.read()
-    encoded_jpg_io = io.BytesIO(encoded_jpg)
-    image = Image.open(encoded_jpg_io)
-    width, height = image.size
+	with tf.gfile.GFile(join(path, '{}'.format(group.filename)), 'rb') as fid:
+	    encoded_jpg = fid.read()
+	encoded_jpg_io = io.BytesIO(encoded_jpg)
+	image = Image.open(encoded_jpg_io)
+	width, height = image.size
 
-    filename = group.filename.encode('utf8')
-    image_format = b'png'
-    xmins = []
-    xmaxs = []
-    ymins = []
-    ymaxs = []
-    classes_text = []
-    classes = []
+	filename = group.filename.encode('utf8')
+	image_format = b'png'
+	xmins = []
+	xmaxs = []
+	ymins = []
+	ymaxs = []
+	classes_text = []
+	classes = []
 
-    for index, row in group.object.iterrows():
-        row['class'] = str(row['class'])
-        xmins.append(row['xmin'] / width)
-        xmaxs.append(row['xmax'] / width)
-        ymins.append(row['ymin'] / height)
-        ymaxs.append(row['ymax'] / height)
-        classes_text.append(row['class'].encode('utf8'))
-        classes.append(class_text_to_int(row['class']))
+	for index, row in group.object.iterrows():
+		length = np.linalg.norm((row['xmax'],row['ymax'])-(row['xmin'],row['ymin']))
+		print(length)
+		row['class'] = str(row['class'])
+		xmins.append(row['xmin'] / width)
+		xmaxs.append(row['xmax'] / width)
+		ymins.append(row['ymin'] / height)
+		ymaxs.append(row['ymax'] / height)
+		classes_text.append(row['class'].encode('utf8'))
+		classes.append(class_text_to_int(row['class']))
 
-    tf_example = tf.train.Example(features=tf.train.Features(feature={
-        'image/height': dataset_util.int64_feature(height),
-        'image/width': dataset_util.int64_feature(width),
-        'image/filename': dataset_util.bytes_feature(filename),
-        'image/source_id': dataset_util.bytes_feature(filename),
-        'image/encoded': dataset_util.bytes_feature(encoded_jpg),
-        'image/format': dataset_util.bytes_feature(image_format),
-        'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
-        'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
-        'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
-        'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
-        'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
-        'image/object/class/label': dataset_util.int64_list_feature(classes),
-    }))
-    return tf_example
+	tf_example = tf.train.Example(features=tf.train.Features(feature={
+	    'image/height': dataset_util.int64_feature(height),
+	    'image/width': dataset_util.int64_feature(width),
+	    'image/filename': dataset_util.bytes_feature(filename),
+	    'image/source_id': dataset_util.bytes_feature(filename),
+	    'image/encoded': dataset_util.bytes_feature(encoded_jpg),
+	    'image/format': dataset_util.bytes_feature(image_format),
+	    'image/object/bbox/xmin': dataset_util.float_list_feature(xmins),
+	    'image/object/bbox/xmax': dataset_util.float_list_feature(xmaxs),
+	    'image/object/bbox/ymin': dataset_util.float_list_feature(ymins),
+	    'image/object/bbox/ymax': dataset_util.float_list_feature(ymaxs),
+	    'image/object/class/text': dataset_util.bytes_list_feature(classes_text),
+	    'image/object/class/label': dataset_util.int64_list_feature(classes),
+	}))
+	return tf_example
 
 def xml2tfRecord(xml_path, split_rate):
-    xml_to_csv(xml_path, split_rate)
-    dirname = os.path.split(xml_path)[0]
-    img_path = join(dirname, 'images')
-    stuffs=['tmp/train', 'tmp/val']
+	xml_to_csv(xml_path, split_rate)
+	dirname = os.path.split(xml_path)[0]
+	img_path = join(dirname, 'images')
+	stuffs=['tmp/train', 'tmp/val']
 
-    for stuff in stuffs:
-        csv_path = stuff+'.csv'
-        record_path = stuff+'.record'
+	for stuff in stuffs:
+	    csv_path = stuff+'.csv'
+	    record_path = stuff+'.record'
+	    writer = tf.python_io.TFRecordWriter(record_path)
+	    examples = pd.read_csv(csv_path)
+	    grouped = split(examples, 'filename')
+	    for group in grouped:
+	        tf_example = create_tf_example(group, img_path)
 
-        writer = tf.python_io.TFRecordWriter(record_path)
-        examples = pd.read_csv(csv_path)
-        grouped = split(examples, 'filename')
-        for group in grouped:
-            tf_example = create_tf_example(group, img_path)
-            writer.write(tf_example.SerializeToString())
-        writer.close()
-        output_path = join(os.getcwd(), record_path)
-        print('Successfully created the TFRecords: {}'.format(output_path))
+	        writer.write(tf_example.SerializeToString())
+	    writer.close()
+	    output_path = join(os.getcwd(), record_path)
+	    print('Successfully created the TFRecords: {}'.format(output_path))
 
 if __name__ == '__main__':
-    xml2tfRecord(xml_path='tmp/annotations', split_rate=0.3)
+	xml2tfRecord(xml_path='tmp/annotations', split_rate=0.3)

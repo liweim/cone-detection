@@ -21,13 +21,13 @@
 tiny_dnn::network<tiny_dnn::sequential> nn;
 int patchSize = 25;
 int patchRadius = int((patchSize-1)/2);
-int width = 320;
-int height = 180;
+int width = 336;
+int height = 188;
 int widthLeft = 0;
-int widthRight = 320;
+int widthRight = 336;
 int inputWidth = widthRight-widthLeft;
-int heightUp = 80;//80;
-int heightDown = 140;//140;
+int heightUp = 70;//80;
+int heightDown = 130;//140;
 int inputHeight = heightDown-heightUp;
 
 // int patchSize = 45;
@@ -91,24 +91,40 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
 }
 
 void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
-  cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
-    350.6847, 0, 332.4661,
-    0, 350.0606, 163.7461,
-    0, 0, 1);
-  cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.1674, 0.0158, 0.0057, 0, 0);
-  cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
-    351.9498, 0, 329.4456,
-    0, 351.0426, 179.0179,
-    0, 0, 1);
-  cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.1700, 0.0185, 0.0048, 0, 0);
-  cv::Mat R = (cv::Mat_<double>(3, 3) <<
-    0.9997, 0.0015, 0.0215,
-    -0.0015, 1, -0.00008,
-    -0.0215, 0.00004, 0.9997);
-  //cv::transpose(R, R);
-  cv::Mat T = (cv::Mat_<double>(3, 1) << -119.1807, 0.1532, 1.1225);
+  // cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
+  //   350.6847, 0, 332.4661,
+  //   0, 350.0606, 163.7461,
+  //   0, 0, 1);
+  // cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.1674, 0.0158, 0.0057, 0, 0);
+  // cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
+  //   351.9498, 0, 329.4456,
+  //   0, 351.0426, 179.0179,
+  //   0, 0, 1);
+  // cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.1700, 0.0185, 0.0048, 0, 0);
+  // cv::Mat R = (cv::Mat_<double>(3, 3) <<
+  //   0.9997, 0.0015, 0.0215,
+  //   -0.0015, 1, -0.00008,
+  //   -0.0215, 0.00004, 0.9997);
+  // cv::Mat T = (cv::Mat_<double>(3, 1) << -119.1807, 0.1532, 1.1225);
+  // cv::Size stdSize = cv::Size(640, 360);
 
-  cv::Size stdSize = cv::Size(640, 360);
+  //official
+  cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
+    349.891, 0, 334.352,
+    0, 349.891, 187.937,
+    0, 0, 1);
+  cv::Mat distLeft = (cv::Mat_<double>(5, 1) << -0.173042, 0.0258831, 0, 0, 0);
+  cv::Mat mtxRight = (cv::Mat_<double>(3, 3) <<
+    350.112, 0, 345.88,
+    0, 350.112, 189.891,
+    0, 0, 1);
+  cv::Mat distRight = (cv::Mat_<double>(5, 1) << -0.174209, 0.026726, 0, 0, 0);
+  cv::Mat rodrigues = (cv::Mat_<double>(3, 1) << -0.0132397, 0.021005, -0.00121284);
+  cv::Mat R;
+  cv::Rodrigues(rodrigues, R);
+  cv::Mat T = (cv::Mat_<double>(3, 1) << -0.12, 0, 0);
+  cv::Size stdSize = cv::Size(672, 376);
+
   int width = img.cols;
   int height = img.rows;
   cv::Mat imgL(img, cv::Rect(0, 0, width/2, height));
@@ -143,7 +159,6 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   rectified = imgL;
 
   cv::reprojectImageTo3D(disp, XYZ, Q);
-  XYZ *= 0.002;
 }
 
 // rescale output to 0-100
@@ -535,8 +550,8 @@ void detectImg(const std::string &imgPath, double threshold) {
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
 
-  cv::line(rectified, cv::Point(0,184), cv::Point(640,184), cv::Scalar(255,255,255), 2);
-  cv::line(rectified, cv::Point(0,256), cv::Point(640,256), cv::Scalar(255,255,255), 2);
+  cv::line(rectified, cv::Point(0,174), cv::Point(672,174), cv::Scalar(255,255,255), 1);
+  cv::line(rectified, cv::Point(0,234), cv::Point(672,234), cv::Scalar(255,255,255), 1);
 
   savePath = imgPath.substr(0,index-7)+"/results/"+filename;
   cv::imwrite(savePath, rectified);
@@ -578,7 +593,7 @@ void detectImg2(const std::string &imgPath, double threshold) {
   // cv::imwrite(savePath, rectified);
 
   img = img.rowRange(120,488);
-  cv::resize(img, rectified, cv::Size(640, 360));
+  cv::resize(img, rectified, cv::Size(672, 376));
   cv::resize(rectified, img, cv::Size(width, height));
   auto patchImg = img(roi);
 
@@ -679,9 +694,6 @@ void detectImg2(const std::string &imgPath, double threshold) {
   // cv::namedWindow("2", cv::WINDOW_NORMAL);
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
-
-  cv::line(rectified, cv::Point(0,184), cv::Point(640,184), cv::Scalar(255,255,255), 2);
-  cv::line(rectified, cv::Point(0,256), cv::Point(640,256), cv::Scalar(255,255,255), 2);
 
   savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png";
   cv::imwrite(savePath, rectified);
