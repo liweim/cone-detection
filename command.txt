@@ -47,3 +47,5 @@ g++ get_depth.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboo
 g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o mobilenet
 
 ./mobilenet ../annotations/skidpad1/images 0.1
+
+g++ sift_cnn.cpp -std=c++14 -I ../tiny-dnn/ -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o sift_cnn
