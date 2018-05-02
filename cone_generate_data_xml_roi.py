@@ -83,10 +83,10 @@ def generate_data_xml(annotation_paths, data_path):
                 if ratio > 0.4:
                     cones.append([x, y, label, ratio])
 
-            txt_path = basename+'.csv'
-            column_name = ['x', 'y', 'label', 'ratio']
-            cone_df = pd.DataFrame(cones, columns=column_name)
-            cone_df.to_csv(txt_path, index=None, header=False)
+            # txt_path = basename+'.csv'
+            # column_name = ['x', 'y', 'label', 'ratio']
+            # cone_df = pd.DataFrame(cones, columns=column_name)
+            # cone_df.to_csv(txt_path, index=None, header=False)
 
             for x, y, label, ratio in cones:
                 if label == 'blue':
