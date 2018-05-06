@@ -17,6 +17,7 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include "opencv2/ximgproc/disparity_filter.hpp"
 
 tiny_dnn::network<tiny_dnn::sequential> nn;
 int patchSize = 25;
@@ -26,8 +27,8 @@ int height = 188;
 int widthLeft = 0;
 int widthRight = 336;
 int inputWidth = widthRight-widthLeft;
-int heightUp = 70;//80;
-int heightDown = 130;//140;
+int heightUp = 90;//80;
+int heightDown = 160;//140;
 int inputHeight = heightDown-heightUp;
 
 // int patchSize = 45;
@@ -77,20 +78,30 @@ void convertImage(cv::Mat img,
 // }
 
 void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
-  cv::Mat grayL, grayR;
+  cv::Mat grayL, grayR, dispL, dispR;
 
   cv::cvtColor(imgL, grayL, 6);
   cv::cvtColor(imgR, grayR, 6);
 
-  cv::Ptr<cv::StereoBM> sbm = cv::StereoBM::create(); 
-  sbm->setBlockSize(17);
-  sbm->setNumDisparities(32);
+  cv::Ptr<cv::StereoBM> sbmL = cv::StereoBM::create(); 
+  sbmL->setBlockSize(13);
+  sbmL->setNumDisparities(32);
+  sbmL->compute(grayL, grayR, dispL);
 
-  sbm->compute(grayL, grayR, disp);
+  auto wls_filter = cv::ximgproc::createDisparityWLSFilter(sbmL);
+  cv::Ptr<cv::StereoMatcher> sbmR = cv::ximgproc::createRightMatcher(sbmL);
+  sbmR->compute(grayR, grayL, dispR);
+  wls_filter->setLambda(8000);
+  wls_filter->setSigmaColor(0.8);
+  wls_filter->filter(dispL, imgL, disp, dispR);
+
   cv::normalize(disp, disp, 0, 255, 32, CV_8U);
+  cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
+  cv::imshow("disp", disp);
+  cv::waitKey(10);
 }
 
-void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
+void reconstruction(const std::string imgPath, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){  
   // cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
   //   350.6847, 0, 332.4661,
   //   0, 350.0606, 163.7461,
@@ -125,13 +136,14 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   cv::Mat T = (cv::Mat_<double>(3, 1) << -0.12, 0, 0);
   cv::Size stdSize = cv::Size(672, 376);
 
+  auto img = cv::imread(imgPath);
   int width = img.cols;
   int height = img.rows;
   cv::Mat imgL(img, cv::Rect(0, 0, width/2, height));
   cv::Mat imgR(img, cv::Rect(width/2, 0, width/2, height));
 
-  cv::resize(imgL, imgL, stdSize);
-  cv::resize(imgR, imgR, stdSize);
+  // cv::resize(imgL, imgL, stdSize);
+  // cv::resize(imgR, imgR, stdSize);
 
   //std::cout << imgR.size() <<std::endl;
 
@@ -146,15 +158,22 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   cv::remap(imgL, imgL, rmap[0][0], rmap[0][1], cv::INTER_LINEAR);
   cv::remap(imgR, imgR, rmap[1][0], rmap[1][1], cv::INTER_LINEAR);
 
-  // cv::imwrite("tmp/imgL.png", imgL);
-  // cv::imwrite("tmp/imgR.png", imgR);
-  // return;
 
   blockMatching(disp, imgL, imgR);
 
+  int index;
+  std::string filename, savePath;
+  index = imgPath.find_last_of('/');
+  filename = imgPath.substr(index+1);
+  savePath = imgPath.substr(0,index-7)+"/disp/"+filename;
+  cv::imwrite(savePath, disp);
+
+  // savePath = imgPath.substr(0,index-7)+"/right/"+filename;
+  // cv::imwrite(savePath, imgR);
+
   // cv::namedWindow("disp", cv::WINDOW_NORMAL);
   // cv::imshow("disp", disp);
-  // cv::waitKey(0);
+  // cv::waitKey(10);
 
   rectified = imgL;
 
@@ -422,6 +441,11 @@ std::vector <cv::Point> imRegionalMax(cv::Mat input, int nLocMax, double thresho
 void detectImg(const std::string &imgPath, double threshold) {
   auto startTime = std::chrono::system_clock::now();
 
+  int index;
+  std::string filename, savePath;
+  index = imgPath.find_last_of('/');
+  filename = imgPath.substr(index+1);
+
   int outputWidth  = inputWidth - (patchSize - 1);
   int outputHeight  = inputHeight - (patchSize - 1);
 
@@ -430,24 +454,16 @@ void detectImg(const std::string &imgPath, double threshold) {
   roi.y = heightUp;
   roi.width = inputWidth;
   roi.height = inputHeight;
-  auto imgSource = cv::imread(imgPath);
+  
   std::chrono::duration<double> diff = std::chrono::system_clock::now()-startTime;
   std::cout << "Imread: " << diff.count() << " s\n";
   startTime = std::chrono::system_clock::now();
 
   cv::Mat Q, disp, rectified, XYZ, img;
-  reconstruction(imgSource, Q, disp, rectified, XYZ);
+  reconstruction(imgPath, Q, disp, rectified, XYZ);
   diff = std::chrono::system_clock::now()-startTime;
   std::cout << "Reconstruction: " << diff.count() << " s\n";
   startTime = std::chrono::system_clock::now();
-
-  int index;
-  std::string filename, savePath;
-
-  index = imgPath.find_last_of('/');
-  filename = imgPath.substr(index+1);
-  savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
-  cv::imwrite(savePath, rectified);
 
   cv::resize(rectified, img, cv::Size(width, height));
   auto patchImg = img(roi);
@@ -550,8 +566,8 @@ void detectImg(const std::string &imgPath, double threshold) {
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
 
-  cv::line(rectified, cv::Point(0,174), cv::Point(672,174), cv::Scalar(255,255,255), 1);
-  cv::line(rectified, cv::Point(0,234), cv::Point(672,234), cv::Scalar(255,255,255), 1);
+  cv::line(rectified, cv::Point(0,204), cv::Point(672,204), cv::Scalar(255,255,255), 1);
+  cv::line(rectified, cv::Point(0,296), cv::Point(672,296), cv::Scalar(255,255,255), 1);
 
   savePath = imgPath.substr(0,index-7)+"/results/"+filename;
   cv::imwrite(savePath, rectified);
@@ -586,7 +602,6 @@ void detectImg2(const std::string &imgPath, double threshold) {
 
   int index;
   std::string filename, savePath;
-
   index = imgPath.find_last_of('/');
   filename = imgPath.substr(index+1);
   // savePath = imgPath.substr(0,index-7)+"/rectified/"+filename;
@@ -695,8 +710,9 @@ void detectImg2(const std::string &imgPath, double threshold) {
   // cv::imshow("2", probMapSplit[2]);
   // cv::waitKey(0);
 
-  savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png";
-  cv::imwrite(savePath, rectified);
+  // savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png";
+  // cv::imwrite(savePath, rectified);
+
   // std::cout << savePath << std::endl;
   // diff = std::chrono::system_clock::now()-startTime;
   // std::cout << "Savefile: " << diff.count() << " s\n";

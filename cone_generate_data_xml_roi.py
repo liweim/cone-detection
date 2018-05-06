@@ -81,22 +81,28 @@ def generate_data_xml(annotation_paths, data_path):
                 max_length = max(abs(x2-x1), abs(y2-y1)) * 1.5
                 ratio = max_length/patch_size
                 if ratio > 0.4:
-                    cones.append([x, y, label, ratio])
+                    cones.append([x1, y1, x2, y2, label, ratio])
 
             # txt_path = basename+'.csv'
             # column_name = ['x', 'y', 'label', 'ratio']
             # cone_df = pd.DataFrame(cones, columns=column_name)
             # cone_df.to_csv(txt_path, index=None, header=False)
 
-            for x, y, label, ratio in cones:
+            for x1, y1, x2, y2, label, ratio in cones:
+                triangle = np.array([[(x1+x2)/2,y1],[x1,y2],[x2,y2]], np.int32)
+                triangle = triangle.reshape((-1,1,2))
                 if label == 'blue':
-                    cv2.circle(mask, (x, y), 2, 252, -1)
+                    cv2.circle(mask, (x, y), 1, 252, -1)
+                    cv2.polylines(mask,[triangle],True,252)
                 if label == 'yellow':
                     cv2.circle(mask, (x, y), 2, 253, -1)
+                    cv2.polylines(mask,[triangle],True,253)
                 if label == 'orange':
                     cv2.circle(mask, (x, y), 2, 254, -1)
+                    cv2.polylines(mask,[triangle],True,254)
                 if label == 'orange2':
                     cv2.circle(mask, (x, y), 2, 255, -1)
+                    cv2.polylines(mask,[triangle],True,255)
             mask[:radius, :] = 0
             mask[img.shape[0]-radius:, :] = 0
             mask[:, :radius] = 0
@@ -109,7 +115,7 @@ def generate_data_xml(annotation_paths, data_path):
             # cv2.waitKey(0)
 
             extra_back = 0
-            while extra_back<20:
+            while extra_back < 10:
                 r = choice(range(row))
                 c = choice(range(col))
                 if mask[r,c] == 100:
@@ -126,7 +132,7 @@ def generate_data_xml(annotation_paths, data_path):
 
             for r in range(row):
                 for c in range(col):               
-                    if mask[r,c] > 100:
+                    if mask[r,c] > 100 and random() < 0.2:
                         image = img[r-radius:r+radius+1, c-radius:c+radius+1]
                         image = cv2.resize(image, (patch_size, patch_size))
                         if random() < 0.7:

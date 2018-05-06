@@ -17,7 +17,7 @@ python3 efficient_sliding_window.py --img_path annotations/skidpad1/1513418746.2
 
 python3 segnet.py --img_path annotations/skidpad1/1513418746.296055.png --model_path models/segnet --cone_distance 3 --threshold 0.9
 
-python3 cone_detect_all.py --img_folder_path annotations/skidpad1 --model_path models/efficient_sliding_window --cone_distance 10 --threshold 0.9
+python3 cone_detect_all.py --img_folder_path annotations/circle/rectified --model_path models/efficient_sliding_window --cone_distance 10 --threshold 0.9
 
 
 
@@ -40,7 +40,7 @@ g++ test_model.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cfl
 
 g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o efficient_sliding_window
 
-./efficient_sliding_window models/all_efficient_rgb_best annotations/skidpad1/images 0.9
+./efficient_sliding_window models/all_efficient_rgb_best annotations/circle/images 0.9
 
 g++ get_depth.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o get_depth
 
@@ -48,6 +48,6 @@ g++ get_depth.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboo
 
 g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o mobilenet
 
-./mobilenet ../annotations/skidpad1/images 0.1
+./mobilenet ../annotations/circle/images 0.1
 
-g++ sift_cnn.cpp -std=c++14 -I ../tiny-dnn/ -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o sift_cnn
+g++ cnn_roi.cpp -std=c++14 -I ../tiny-dnn/ -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o cnn_roi

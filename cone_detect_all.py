@@ -12,7 +12,7 @@ def cone_detect_all(img_folder_path, model_path, cone_distance, threshold):
     start = time.clock()
     img_paths = glob.glob(img_folder_path + '/*.png')
     for img_path in img_paths:
-        cone_detect(img_path, model, cone_distance, threshold, display_result = 0)
+        cone_detect(img_path, model, cone_distance, threshold, display_result = 1)
         gc.collect()
     print('Run time: {}'.format((time.clock() - start)/len(img_paths)))
 

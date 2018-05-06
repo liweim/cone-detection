@@ -100,7 +100,7 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
     channel = 3
     num_class = 3
     classes = range(1, num_class+1)
-    up_limit = 170
+    up_limit = 0
     down_limit = 290
 
     img_source = cv2.imread(img_path)
@@ -109,7 +109,7 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
     else:
         img = imresize(img_source, resize_rate)
 
-    img = img[int(up_limit*resize_rate):int(down_limit*resize_rate),:,:]
+    # img = img[int(up_limit*resize_rate):int(down_limit*resize_rate),:,:]
     img_pad = load_image(img, patch_radius)
     rows, cols = img.shape[:2]
     rows_pad, cols_pad = img_pad.shape[:2]
@@ -167,12 +167,13 @@ def cone_detect(img_path, model, cone_distance, threshold, display_result = 1):
         cv2.setWindowProperty("img", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow('img', img_source)
         cv2.waitKey(0)
-    save_path = join('tmp', 'result', basename)
+    path = os.path.split(os.path.split(img_path)[0])[0]
+    save_path = join(path, 'results_keras', basename)
     cv2.imwrite(save_path, img_source)
 
     column_name = ['x', 'y', 'label']
     cone_df = pd.DataFrame(cones, columns=column_name)
-    cone_df.to_csv(join('tmp', 'result', filename+'.csv'), index=None, header=False)
+    cone_df.to_csv(join(path, 'results_keras', filename+'.csv'), index=None, header=False)
 
 def cone_detect_roi(csv_folder_path, model, bias_rate, threshold):
     dirname = os.path.split(csv_folder_path)[0]
