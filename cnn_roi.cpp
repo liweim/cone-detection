@@ -305,7 +305,7 @@ void forwardDetectionORB(const std::string& imgPath){
   		else{
     		std::cout << "Find one " << labelName << " cone"<< std::endl;
     		if (labelName == "blue")
-    		  cv::circle(imgSource, position, 2, cv::Scalar (255,0,0), -1);
+    		  cv::circle(imgSource, position, 2, cv::Scalar (175,238,238), -1);
     		else if (labelName == "yellow")
     		  cv::circle(imgSource, position, 2, cv::Scalar (0,255,255), -1);
     		else if (labelName == "orange")
