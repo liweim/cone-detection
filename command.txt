@@ -3,7 +3,9 @@ python3 cone_annotate_region.py --mode 1 --img_path annotations/snowy/rectified/
 
 python3 annotation_triangle.py
 
-python3 cone_generate_data_xml.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_efficient --efficient 1
+python3 cone_generate_data_xml.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_roi_big --efficient 0
+
+python3 cone_generate_data_xml_roi_new.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified annotations/circle/rectified --data_path tmp/all_roi_big
 
 python3 cone_generate_data_xml_roi.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_roi_big
 
