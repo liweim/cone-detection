@@ -5,7 +5,7 @@ python3 annotation_triangle.py
 
 python3 cone_generate_data_xml.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_efficient --efficient 1
 
-python3 cone_generate_data_xml_roi.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_roi
+python3 cone_generate_data_xml_roi.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_roi_big
 
 python3 cone_generate_data_txt.py --data_path data_center_resize
 
@@ -32,7 +32,7 @@ g++ sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs -
 export OMP_NUM_THREADS=4
 g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o train_efficient_sliding_window
 
-./train_efficient_sliding_window all_efficient models/all_efficient_rgb 0.005 300 512
+./train_efficient_sliding_window all_roi_big models/all_roi_big 0.005 300 512
 
 g++ test_model.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o test_model
 
@@ -51,3 +51,5 @@ g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboo
 ./mobilenet ../annotations/circle/images 0.1
 
 g++ cnn_roi.cpp -std=c++14 -I ../tiny-dnn/ -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o cnn_roi
+
+g++ lidar_camera_calibration.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -o lidar_camera_calibration

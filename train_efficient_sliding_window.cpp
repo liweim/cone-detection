@@ -111,8 +111,9 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   using pool    = tiny_dnn::max_pooling_layer;
   using fc      = tiny_dnn::fully_connected_layer;
   using tanh    = tiny_dnn::tanh_layer;
+  using leaky_relu    = tiny_dnn::leaky_relu_layer;
+  using dropout    = tiny_dnn::dropout_layer;
   using softmax = tiny_dnn::softmax_layer;
-  using dropout = tiny_dnn::dropout_layer;
   int width = patch_size;
   int height = patch_size;
 
@@ -161,6 +162,14 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
      << conv(width-20, height-20, 3, 32, 64, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh()
      << conv(width-22, height-22, 3, 64, 5, tiny_dnn::padding::valid, true, 1, 1, backend_type) << softmax(5);
 
+  // nn << conv(45, 45, 3, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+  //  << dropout(22*22*16, 0.25)                                                   
+  //  << conv(22, 22, 4, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+  //  << dropout(10*10*32, 0.25)
+  //  << conv(10, 10, 4, 32, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+  //  << dropout(4*4*32, 0.25)                     
+  //  << fc(4*4*32, 128, true, backend_type) << leaky_relu()  
+  //  << fc(128, 5, true, backend_type) << softmax(5);
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";

@@ -11,7 +11,7 @@ import glob
 import xml.etree.ElementTree as ET
 import pandas as pd
 
-patch_size = 25
+patch_size = 45
 resize_rate = 0.5
 factor0 = 8
 factor100 = 12
