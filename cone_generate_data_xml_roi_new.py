@@ -76,7 +76,7 @@ def generate_data_xml(annotation_paths, data_path):
                 x = int((x1+x2)/2)
                 y = int((y1+y2)/2)
 
-                max_length = max(abs(x2-x1), abs(y2-y1))
+                max_length = max(abs(x2-x1), abs(y2-y1))*1.2
                 ratio = max_length/patch_size
                 
                 if ratio > 0.3:
@@ -91,7 +91,10 @@ def generate_data_xml(annotation_paths, data_path):
                     if label == 'orange' or label == 'orange1':
                         cv2.fillPoly(mask, [triangle], 254);
                     if label == 'orange2':
-                        cv2.fillPoly(mask, [triangle], 255);         
+                        cv2.circle(mask, (x, y), 5, 255, -1)
+                        # triangle = np.array([[x,y1+1],[(x+x1)/2+1,y-1],[(x+x2)/2-1,y-1]], np.int32)
+                        # triangle = triangle.reshape((-1,1,2)) 
+                        # cv2.fillPoly(mask, [triangle], 255);         
 
                     # x, y = random_shift(x, y, 3)
                 
@@ -111,7 +114,7 @@ def generate_data_xml(annotation_paths, data_path):
             # cv2.waitKey(0)
 
             extra_back = 0
-            while extra_back<5:
+            while extra_back<3:
                 r = choice(range(row))
                 c = choice(range(col))
                 if mask[r,c] == 100:
@@ -137,7 +140,7 @@ def generate_data_xml(annotation_paths, data_path):
                 # cv2.namedWindow('img', cv2.WINDOW_NORMAL)
                 # cv2.imshow('img', mask_tmp)
                 # cv2.waitKey(0)
-                pickup_rate = np.sum(mask_tmp>100)/np.sum(mask_tmp==100)/3
+                pickup_rate = np.sum(mask_tmp>100)/np.sum(mask_tmp==100)/5
                 for c in range(cl, cr):
                     for r in range(rl, rr):
                         if random() < 0.1:
@@ -145,7 +148,8 @@ def generate_data_xml(annotation_paths, data_path):
                             if random() < 0.7:
                                 image = mask_img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
                                 image = cv2.resize(image, (patch_size, patch_size))
-                                # image = augmentation(image)
+                                if mask[r,c] < 255:
+                                    image = augmentation(image)
                                 path = join(data_path, 'train')
                             else:
                                 image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]

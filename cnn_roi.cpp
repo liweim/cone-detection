@@ -11,6 +11,8 @@
 
 tiny_dnn::network<tiny_dnn::sequential> m_slidingWindow;
 
+int patch_size = 45;
+
 void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   cv::Mat grayL, grayR, dispL, dispR;
 
@@ -30,11 +32,11 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   wls_filter->filter(dispL, imgL, disp, dispR);
   disp /= 16;
 
-  cv::Mat disp8;
-  cv::normalize(disp, disp8, 0, 255, 32, CV_8U);
-  cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
-  cv::imshow("disp", imgL+imgR);
-  cv::waitKey(10);
+  // cv::Mat disp8;
+  // cv::normalize(disp, disp8, 0, 255, 32, CV_8U);
+  // cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
+  // cv::imshow("disp", imgL+imgR);
+  // cv::waitKey(10);
 }
 
 void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
@@ -139,23 +141,23 @@ void slidingWindow(const std::string& dictionary) {
 
   tiny_dnn::core::backend_t backend_type = tiny_dnn::core::default_engine();
 
-  m_slidingWindow << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
-     // << dropout(22*22*16, 0.25)                    
-     << pool(22, 22, 16, 2, backend_type)                               
-     << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
-     // << dropout(8*8*32, 0.25)                    
-     << pool(8, 8, 32, 2, backend_type) 
-     << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
-     << fc(128, 5, true, backend_type) << softmax(5);
-
-  // m_slidingWindow << conv(45, 45, 3, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
-  //    // << dropout(22*22*16, 0.25)                                                   
-  //    << conv(22, 22, 4, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
-  //    // << dropout(8*8*32, 0.25)
-  //    << conv(10, 10, 4, 32, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
-  //    // << dropout(8*8*32, 0.25)                     
+  // m_slidingWindow << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
+  //    // << dropout(22*22*16, 0.25)                    
+  //    << pool(22, 22, 16, 2, backend_type)                               
+  //    << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
+  //    // << dropout(8*8*32, 0.25)                    
+  //    << pool(8, 8, 32, 2, backend_type) 
   //    << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
-  //    << fc(128, 5, true, backend_type) << softmax(5);  
+  //    << fc(128, 5, true, backend_type) << softmax(5);
+
+  m_slidingWindow << conv(45, 45, 3, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     // << dropout(22*22*16, 0.25)                                                   
+     << conv(22, 22, 4, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     // << dropout(8*8*32, 0.25)
+     << conv(10, 10, 4, 32, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     // << dropout(8*8*32, 0.25)                     
+     << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
+     << fc(128, 5, true, backend_type) << softmax(5);  
 
   // load nets
   std::ifstream ifs(dictionary.c_str());
@@ -511,7 +513,7 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
         if (data[j].group == -1){ 
           data[j].group = groupId++;
           point2D = data[j].pt;
-          std::cout<<j<<" type 1"<<" "<<data[j].pt.x<<","<<data[j].pt.y<<" group "<<data[j].group<<std::endl;
+          // std::cout<<j<<" type 1"<<" "<<data[j].pt.x<<","<<data[j].pt.y<<" group "<<data[j].group<<std::endl;
         }
       }
       else{   
@@ -536,7 +538,7 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
 
               float X1 = data[filteredIndex[k]].pt.x*resultResize+resultSize/2;
               float Y1 = data[filteredIndex[k]].pt.y*resultResize;
-              std::cout<<k<<" type 2"<<" "<<data[vecIndex[k]].pt.x<<","<<data[vecIndex[k]].pt.y<<" group "<< data[vecIndex[k]].group<<std::endl;
+              // std::cout<<k<<" type 2"<<" "<<data[vecIndex[k]].pt.x<<","<<data[vecIndex[k]].pt.y<<" group "<< data[vecIndex[k]].group<<std::endl;
               cv::circle(result, cv::Point(X1,Y1), 5, cv::Scalar(rng.uniform(0,255),rng.uniform(0,255),rng.uniform(0,255)), -1);
             }
           }
@@ -547,7 +549,7 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
         else{
           data[j].group = data[vecIndex[0]].group;
           point2D = data[j].pt;
-          std::cout<<j<<" type 2"<<" "<<data[j].pt.x<<","<<data[j].pt.y<<" group "<<data[j].group<<std::endl;
+          // std::cout<<j<<" type 2"<<" "<<data[j].pt.x<<","<<data[j].pt.y<<" group "<<data[j].group<<std::endl;
         }
       }
       point3Ds.push_back(cv::Point3f(point2D.x, 1, point2D.y));
@@ -561,13 +563,13 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
   //   std::cout<<p<<" "<<data[p].pt.x<<" "<<data[p].pt.y<<" group "<<data[p].group<<std::endl;
   // }
 
-  for (int r = 0; r < point3Ds.size(); r++){
-    std::cout<<"NO."<<r<<" "<<point3Ds[r].x<<","<<point3Ds[r].z<<std::endl;
-  }
+  // for (int r = 0; r < point3Ds.size(); r++){
+  //   std::cout<<"NO."<<r<<" "<<point3Ds[r].x<<","<<point3Ds[r].z<<std::endl;
+  // }
 
-  cv::flip(result, result, 0);
-  cv::namedWindow("result", cv::WINDOW_NORMAL);
-  cv::imshow("result", result);
+  // cv::flip(result, result, 0);
+  // cv::namedWindow("result", cv::WINDOW_NORMAL);
+  // cv::imshow("result", result);
   // cv::waitKey(0);
 }
 
@@ -644,7 +646,6 @@ void forwardDetectionORB(const std::string& imgPath){
     point3Ds.push_back(cv::Point3f(XYZ.at<cv::Point3f>(position)));
   }
   filterKeypoints(point3Ds);
-  std::cout << point3Ds.size() << std::endl;
   for(size_t i = 0; i < point3Ds.size(); i++){
     int radius;
     xyz2xy(Q, point3Ds[i], point2D, radius);
@@ -676,7 +677,7 @@ void forwardDetectionORB(const std::string& imgPath){
     else{
       auto patchImg = img(roi);
       tiny_dnn::vec_t data;
-      convertImage(patchImg, 25, 25, data);
+      convertImage(patchImg, patch_size, patch_size, data);
       inputs.push_back({data});
       // outputs.push_back(0);
       verifiedIndex.push_back(i);
@@ -726,8 +727,6 @@ void forwardDetectionORB(const std::string& imgPath){
       int radius;
       cv::Point2f position_tmp;
       xyz2xy(Q, point3D, position_tmp, radius);
-
-      std::cout << radius << std::endl;
 
      if (labelName == "background"){
        std::cout << "No cone detected" << std::endl;
@@ -830,7 +829,7 @@ void forwardDetectionORB(const std::string& imgPath){
 
   cv::namedWindow("img", cv::WINDOW_NORMAL);
   cv::imshow("img", imgSource);
-  cv::waitKey(0);
+  cv::waitKey(10);
   // cv::destroyAllWindows();
 
   // for(size_t i = 0; i < pts.size(); i++)
@@ -844,7 +843,7 @@ void forwardDetectionORB(const std::string& imgPath){
 
 int main( int argc, char** argv )
 {
-	slidingWindow("models/all_roi");
+	slidingWindow("models/all_roi_big");
 	for(int i = 85; i < 650; i++){
 		auto startTime = std::chrono::system_clock::now();
 		forwardDetectionORB("annotations/circle/images/"+std::to_string(i)+".png");

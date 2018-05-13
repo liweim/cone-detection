@@ -18,7 +18,7 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
-int patch_size = 25;
+int patch_size = 45;
 
 void convert_image(cv::Mat img,
                    int w,
@@ -152,12 +152,21 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   //    << fc(2 * 2 * 32, 128, true, backend_type) << tanh()                                            
   //    << fc(128, 4, true, backend_type) << softmax(4); 
 
-  nn << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
-     << dropout(22*22*16, 0.25)                    
-     << pool(22, 22, 16, 2, backend_type)                               
-     << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
-     << dropout(8*8*32, 0.25)                    
-     << pool(8, 8, 32, 2, backend_type) 
+  // nn << conv(25, 25, 4, 3, 16, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
+  //    << dropout(22*22*16, 0.25)                    
+  //    << pool(22, 22, 16, 2, backend_type)                               
+  //    << conv(11, 11, 4, 16, 32, tiny_dnn::padding::valid, true, 1, 1, backend_type) << tanh() 
+  //    << dropout(8*8*32, 0.25)                    
+  //    << pool(8, 8, 32, 2, backend_type) 
+  //    << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
+  //    << fc(128, 5, true, backend_type) << softmax(5); 
+
+  nn << conv(45, 45, 3, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     // << dropout(22*22*16, 0.25)                                                   
+     << conv(22, 22, 4, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     // << dropout(8*8*32, 0.25)
+     << conv(10, 10, 4, 32, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     // << dropout(8*8*32, 0.25)                     
      << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
      << fc(128, 5, true, backend_type) << softmax(5); 
 
