@@ -748,6 +748,10 @@ void forwardDetectionORB(const std::string& imgPath){
    }
   }
 
+  for(int i = 0; i < keypoints.size(); i++){
+    cv::circle(imgSource, cv::Point(keypoints[i].pt.x,keypoints[i].pt.y+180), 2, cv::Scalar (255,255,255), -1);
+  }
+  
   // int resultWidth = 672;
   // int resultHeight = 600;
   // double resultResize = 30;
