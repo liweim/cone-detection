@@ -7,11 +7,12 @@ import pylab as pl
 import matplotlib.pyplot as plt
 from Utils import write_csv
 import glob
-
-patch_size = 25
-radius = int((patch_size-1)/2)
+import gc
 
 def annotate(img_path):
+    csv_path = img_path[:-3]+'csv'
+    if os.path.exists(csv_path):
+        return
     img = cv2.imread(img_path)
     row, col = img.shape[:2]
     cv2.line(img, (0,210), (col,210), (0,0,255), 2)
@@ -28,11 +29,12 @@ def annotate(img_path):
             xy.append([x, y, label])
     xy = np.array(xy)
 
-    write_csv(img_path[:-3]+'csv', xy)
+    write_csv(csv_path, xy)
 
 def annotate_all():
     for img_path in glob.glob('annotations/circle/results_circle_perfect/*.png'):
         annotate(img_path) 
+        gc.collect()
 
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser()

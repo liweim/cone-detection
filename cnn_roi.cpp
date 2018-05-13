@@ -24,13 +24,14 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   sbmL->setNumDisparities(32);
   sbmL->compute(grayL, grayR, dispL);
 
-  auto wls_filter = cv::ximgproc::createDisparityWLSFilter(sbmL);
-  cv::Ptr<cv::StereoMatcher> sbmR = cv::ximgproc::createRightMatcher(sbmL);
-  sbmR->compute(grayR, grayL, dispR);
-  wls_filter->setLambda(8000);
-  wls_filter->setSigmaColor(0.8);
-  wls_filter->filter(dispL, imgL, disp, dispR);
-  disp /= 16;
+  // auto wls_filter = cv::ximgproc::createDisparityWLSFilter(sbmL);
+  // cv::Ptr<cv::StereoMatcher> sbmR = cv::ximgproc::createRightMatcher(sbmL);
+  // sbmR->compute(grayR, grayL, dispR);
+  // wls_filter->setLambda(8000);
+  // wls_filter->setSigmaColor(0.8);
+  // wls_filter->filter(dispL, imgL, disp, dispR);
+  // disp /= 16;
+  disp = dispL/16;
 
   // cv::Mat disp8;
   // cv::normalize(disp, disp8, 0, 255, 32, CV_8U);
@@ -428,7 +429,17 @@ std::vector <cv::Point> imRegionalMax(cv::Mat input, int nLocMax, double thresho
 // }
 
 
+float computevecan(std::vector<float> vec) {
+  int size = vec.size();
+  float tvecan;
+  if (size % 2 == 0) { // even
+    tvecan = (vec[vec.size() / 2 - 1] + vec[vec.size() / 2]) / 2;
+  }
 
+  else //odd
+    tvecan = vec[vec.size() / 2];
+  return (tvecan);
+}
 
 float_t depth2resizeRate(double x, double y){
   return 2*(1.6078-0.4785*std::sqrt(std::sqrt(x*x+y*y)));
@@ -447,8 +458,8 @@ void gather_points(//初始化
   std::vector<float> &vecDist
   )
 {  
-  double radius = 0.5;
-  unsigned int max_neighbours = 20;
+  double radius = 1;
+  unsigned int max_neighbours = 100;
   cv::flann::KDTreeIndexParams indexParams(2);
   cv::flann::Index kdtree(source, indexParams); //此部分建立kd-tree索引同上例，故不做详细叙述
   cv::flann::SearchParams params(1024);//设置knnSearch搜索参数
@@ -487,11 +498,12 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
   cv::Mat source = cv::Mat(data_tmp).reshape(1);
  
   int resultSize = 1000;
-  double resultResize = 100;
+  double resultResize = 50;
   cv::RNG rng(time(0));
   cv::Mat result = cv::Mat::zeros(resultSize, resultSize, CV_8UC3);
   cv::Point2f point2D;
   int groupId = 0;
+  
 
   for(int j = 0; j < data.size()-1; j++)
   {   
@@ -519,8 +531,8 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
       else{   
         std::vector<Pt> groupAll;
         std::vector<int> filteredIndex;
-        float centerPointX = 0;
-        float centerPointY = 0;
+        std::vector<float> centerPointX;
+        std::vector<float> centerPointY;
         for (int v = 0; v < num; v++){
           groupAll.push_back(data[vecIndex[v]]);
           filteredIndex.push_back(vecIndex[v]);
@@ -533,8 +545,8 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
             if (data[filteredIndex[k]].group == -1)
             { 
               data[filteredIndex[k]].group = groupId;
-              centerPointX += data[vecIndex[k]].pt.x;
-              centerPointY += data[vecIndex[k]].pt.y;
+              centerPointX.push_back(data[vecIndex[k]].pt.x);
+              centerPointY.push_back(data[vecIndex[k]].pt.y);
 
               float X1 = data[filteredIndex[k]].pt.x*resultResize+resultSize/2;
               float Y1 = data[filteredIndex[k]].pt.y*resultResize;
@@ -543,8 +555,8 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
             }
           }
           groupId++;
-          point2D.x = centerPointX / noGroup;
-          point2D.y = centerPointY / noGroup;
+          point2D.x = computevecan(centerPointX);
+          point2D.y = computevecan(centerPointY);
         }
         else{
           data[j].group = data[vecIndex[0]].group;
@@ -553,6 +565,7 @@ void filterKeypoints(std::vector<cv::Point3f>& point3Ds){
         }
       }
       point3Ds.push_back(cv::Point3f(point2D.x, 1, point2D.y));
+
       float X1 = point2D.x*resultResize+resultSize/2;
       float Y1 = point2D.y*resultResize;
       cv::circle(result, cv::Point(X1,Y1), 8, cv::Scalar(0, 255, 255), -1);
@@ -590,7 +603,7 @@ void xyz2xy(cv::Mat Q, cv::Point3f xyz, cv::Point2f &xy, int &radius){
 
 void forwardDetectionORB(const std::string& imgPath){
   //Given RoI by SIFT detector and detected by CNN
-  double threshold = 0.01;
+  double threshold = 0.1;
 
   std::vector<tiny_dnn::tensor_t> inputs;
   std::vector<int> verifiedIndex;
@@ -606,7 +619,7 @@ void forwardDetectionORB(const std::string& imgPath){
   // img.rowRange(106,130) = 0;
   // img = img.rowRange(150, 280);
 
-  img = imgSource.rowRange(180, 320);
+  img = imgSource.rowRange(170, 310);
   // cv::Mat img_hsv, gray;
   // cv::cvtColor(img, img_hsv, cv::COLOR_BGR2HSV);
   // cv::cvtColor(img, gray, 6);
@@ -624,7 +637,7 @@ void forwardDetectionORB(const std::string& imgPath){
   // cv::convertScaleAbs(grad_y, abs_grad_y);
   // cv::addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, grad);
 
-  cv::Ptr<cv::ORB> detector = cv::ORB::create(20);
+  cv::Ptr<cv::ORB> detector = cv::ORB::create();
   std::vector<cv::KeyPoint> keypoints;
   detector->detect(img, keypoints);
 
@@ -694,6 +707,12 @@ void forwardDetectionORB(const std::string& imgPath){
   savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
   savefile.open(savePath);
 
+  int resultWidth = 672;
+  int resultHeight = 600;
+  double resultResize = 30;
+  cv::Mat result = cv::Mat::zeros(resultHeight, resultWidth, CV_8UC3);
+  std::string labels[] = {"background", "blue", "yellow", "orange", "big orange"};
+
   if(inputs.size()>0){
     auto prob = m_slidingWindow.predict(inputs);
     for(size_t i = 0; i < inputs.size(); i++){
@@ -713,10 +732,10 @@ void forwardDetectionORB(const std::string& imgPath){
     }
     std::vector <cv::Point> cones = imRegionalMax(probMap, 10, threshold, 10);
 
-    std::string labels[] = {"background", "blue", "yellow", "orange", "big orange"};
     for(size_t i = 0; i < cones.size(); i++){
       int x = cones[i].x;
       int y = cones[i].y;
+      double maxProb = probMap.at<double>(y,x);
       int maxIndex = indexMap.at<int>(y,x);
       cv::Point position(x*2, y*2+180);
       cv::Point3f point3D = XYZ.at<cv::Point3f>(position);
@@ -728,30 +747,46 @@ void forwardDetectionORB(const std::string& imgPath){
       cv::Point2f position_tmp;
       xyz2xy(Q, point3D, position_tmp, radius);
 
-     if (labelName == "background"){
-       std::cout << "No cone detected" << std::endl;
-       cv::circle(imgSource, position, radius, cv::Scalar (0,0,0));
-     } 
-     else{
-       if (labelName == "blue")
-         cv::circle(imgSource, position, radius, cv::Scalar (175,238,238));
-       else if (labelName == "yellow")
-         cv::circle(imgSource, position, radius, cv::Scalar (0,255,255));
-       else if (labelName == "orange")
-         cv::circle(imgSource, position, radius, cv::Scalar (0,165,255));
-       else if (labelName == "big orange")
-         cv::circle(imgSource, position, radius, cv::Scalar (0,0,255));
+      if(radius>0){
+        if (labelName == "background"){
+        std::cout << "No cone detected" << std::endl;
+        cv::circle(imgSource, position, radius, cv::Scalar (0,0,0));
+        } 
+        else{
+          if (labelName == "blue")
+            cv::circle(imgSource, position, radius, cv::Scalar (175,238,238));
+          else if (labelName == "yellow")
+            cv::circle(imgSource, position, radius, cv::Scalar (0,255,255));
+          else if (labelName == "orange")
+            cv::circle(imgSource, position, radius, cv::Scalar (0,165,255));
+          else if (labelName == "big orange")
+            cv::circle(imgSource, position, radius, cv::Scalar (0,0,255));
 
-        std::cout << position << " " << labelName << " " << point3D << std::endl;
-        savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+labelName+","+std::to_string(point3D.x)+","+std::to_string(point3D.y)+","+std::to_string(point3D.z)+"\n";
-     }
-   }
+          int xt = int(point3D.x * float(resultResize) + resultWidth/2);
+          int yt = int(point3D.z * float(resultResize));
+          if (xt >= 0 && xt <= resultWidth && yt >= 0 && yt <= resultHeight){
+            if (labelName == "blue")
+              cv::circle(result, cv::Point (xt,yt), 5, cv::Scalar (255,0,0), -1);
+            else if (labelName == "yellow")
+              cv::circle(result, cv::Point (xt,yt), 5, cv::Scalar (0,255,255), -1);
+            else if (labelName == "orange")
+              cv::circle(result, cv::Point (xt,yt), 5, cv::Scalar (0,165,255), -1);
+            else if (labelName == "big orange")
+              cv::circle(result, cv::Point (xt,yt), 10, cv::Scalar (0,0,255), -1);
+          }
+
+          std::cout << position << " " << labelName << " " << point3D << " " << maxProb << std::endl;
+          savefile << std::to_string(position.x)+","+std::to_string(position.y)+","+labelName+","+std::to_string(point3D.x)+","+std::to_string(point3D.y)+","+std::to_string(point3D.z)+"\n";
+        }
+      }
+      
+    }
   }
 
   for(int i = 0; i < keypoints.size(); i++){
     cv::circle(imgSource, cv::Point(keypoints[i].pt.x,keypoints[i].pt.y+180), 2, cv::Scalar (255,255,255), -1);
   }
-  
+
   // int resultWidth = 672;
   // int resultHeight = 600;
   // double resultResize = 30;
@@ -820,7 +855,7 @@ void forwardDetectionORB(const std::string& imgPath){
   // }
 
   // cv::circle(result[0], cv::Point (int(resultWidth/2),0), 5, cv::Scalar (0, 0, 255), -1);
-  // cv::flip(result[0], result[0], 0);
+  cv::flip(result, result, 0);
   // imgSource.copyTo(result[1].rowRange(resultHeight-376,resultHeight));
   // cv::hconcat(result[1], result[0], coResult);
   cv::imwrite(imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png", imgSource);
@@ -833,7 +868,9 @@ void forwardDetectionORB(const std::string& imgPath){
 
   cv::namedWindow("img", cv::WINDOW_NORMAL);
   cv::imshow("img", imgSource);
-  cv::waitKey(10);
+  cv::namedWindow("result", cv::WINDOW_NORMAL);
+  cv::imshow("result", result);
+  cv::waitKey(30);
   // cv::destroyAllWindows();
 
   // for(size_t i = 0; i < pts.size(); i++)
