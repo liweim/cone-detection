@@ -24,17 +24,17 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   sbmL->setNumDisparities(32);
   sbmL->compute(grayL, grayR, dispL);
 
-  // auto wls_filter = cv::ximgproc::createDisparityWLSFilter(sbmL);
-  // cv::Ptr<cv::StereoMatcher> sbmR = cv::ximgproc::createRightMatcher(sbmL);
-  // sbmR->compute(grayR, grayL, dispR);
-  // wls_filter->setLambda(8000);
-  // wls_filter->setSigmaColor(0.8);
-  // wls_filter->filter(dispL, imgL, disp, dispR);
-  // disp /= 16;
-  disp = dispL/16;
+  auto wls_filter = cv::ximgproc::createDisparityWLSFilter(sbmL);
+  cv::Ptr<cv::StereoMatcher> sbmR = cv::ximgproc::createRightMatcher(sbmL);
+  sbmR->compute(grayR, grayL, dispR);
+  wls_filter->setLambda(8000);
+  wls_filter->setSigmaColor(0.8);
+  wls_filter->filter(dispL, imgL, disp, dispR);
+  disp /= 16;
+  // disp = dispL/16;
 
   // cv::Mat disp8;
-  // cv::normalize(disp, disp8, 0, 255, 32, CV_8U);
+  // cv::normalize(disp, disp, 0, 255, 32, CV_8U);
   // cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
   // cv::imshow("disp", imgL+imgR);
   // cv::waitKey(10);
@@ -863,13 +863,14 @@ void forwardDetectionORB(const std::string& imgPath){
   // savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".png";
   // cv::imwrite(savePath, imgSource);
 
-  // savePath = imgPath.substr(0,index-7)+"/disp/"+filename;
+  // savePath = imgPath.substr(0,index-7)+"/disp/"+filename.substr(0,index2)+".png";
+  // std::cout<<savePath<<std::endl;
   // cv::imwrite(savePath, disp);
 
   cv::namedWindow("img", cv::WINDOW_NORMAL);
   cv::imshow("img", imgSource);
   cv::namedWindow("result", cv::WINDOW_NORMAL);
-  cv::imshow("result", result);
+  cv::imshow("result", disp);
   cv::waitKey(30);
   // cv::destroyAllWindows();
 

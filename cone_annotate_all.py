@@ -11,8 +11,8 @@ import gc
 
 def annotate(img_path):
     csv_path = img_path[:-3]+'csv'
-    if os.path.exists(csv_path):
-        return
+    # if os.path.exists(csv_path):
+    #     return
     img = cv2.imread(img_path)
     row, col = img.shape[:2]
     cv2.line(img, (0,210), (col,210), (0,0,255), 2)
@@ -32,8 +32,8 @@ def annotate(img_path):
     write_csv(csv_path, xy)
 
 def annotate_all():
-    for img_path in glob.glob('annotations/circle/results_circle_perfect/*.png'):
-        annotate(img_path) 
+    for i in range(93,100):
+        annotate('annotations/circle/results_circle_perfect/'+str(i)+'.png') 
         gc.collect()
 
 if __name__ == '__main__':
