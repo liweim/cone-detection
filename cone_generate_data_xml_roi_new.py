@@ -4,7 +4,7 @@ from os.path import join
 import cv2
 import argparse
 from random import random, choice
-from Utils import read_txt, write_txt, isPointsInPolygons
+from Utils import read_txt, write_txt, read_csv
 from scipy.misc import imresize
 from shutil import rmtree, copyfile
 import glob
@@ -78,12 +78,12 @@ def generate_data_xml(annotation_paths, data_path):
 
                 max_length = max(abs(x2-x1), abs(y2-y1))*1.2
                 ratio = max_length/patch_size
-                
+
                 if ratio > 0.3:
                     mask[max(0,y1-5):min(row,y2+5),max(0,x1-5):min(col,x2+5)] = 0
                     triangle = np.array([[x,y1+1],[x1+1,y2-1],[x2-1,y2-1]], np.int32)
-                    triangle = triangle.reshape((-1,1,2))  
-                    
+                    triangle = triangle.reshape((-1,1,2))
+
                     if label == 'blue':
                         cv2.fillPoly(mask, [triangle], 252);
                     if label == 'yellow':
@@ -93,15 +93,15 @@ def generate_data_xml(annotation_paths, data_path):
                     if label == 'orange2':
                         cv2.circle(mask, (x, y), 5, 255, -1)
                         # triangle = np.array([[x,y1+1],[(x+x1)/2+1,y-1],[(x+x2)/2-1,y-1]], np.int32)
-                        # triangle = triangle.reshape((-1,1,2)) 
-                        # cv2.fillPoly(mask, [triangle], 255);         
+                        # triangle = triangle.reshape((-1,1,2))
+                        # cv2.fillPoly(mask, [triangle], 255);
 
                     # x, y = random_shift(x, y, 3)
-                
+
                     cones.append([x, y, label, ratio, triangle])
                     # cv2.circle(mask, (x, y), int(factor100*ratio), 100, -1)
-                
-            
+
+
             mask[:radius, :] = 0
             mask[img.shape[0]-radius:, :] = 0
             mask[:, :radius] = 0
@@ -156,9 +156,9 @@ def generate_data_xml(annotation_paths, data_path):
                                 image = cv2.resize(image, (patch_size, patch_size))
                                 path = join(data_path, 'test')
                             if mask[r,c] == 100:
-                                if random() < pickup_rate: 
-                                    path = join(path, '0')   
-                                    flag = 1                      
+                                if random() < pickup_rate:
+                                    path = join(path, '0')
+                                    flag = 1
                             if mask[r,c] > 100:
                                 flag = 1
                                 if mask[r,c] == 252:
@@ -180,7 +180,7 @@ def generate_data_xml(annotation_paths, data_path):
     for txt_path in glob.glob(path):
         img_path = txt_path[:-3]+'png'
         img = cv2.imread(img_path)
-        points = read_txt(txt_path)
+        points = read_csv(txt_path)
         row, col = img.shape[:2]
         for point in points[1:]:
             x = int(point[0])
