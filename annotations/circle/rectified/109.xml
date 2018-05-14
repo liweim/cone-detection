@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>109.png</filename>
-	<path>/media/weiming/Ny volym/ubuntu-project/cone-detection/annotations/circle/rectified/109.png</path>
+	<path>/home/yumeng/project/cone-detection/annotations/circle/rectified/109.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -72,7 +72,7 @@
 		</bndbox>
 	</object>
 	<object>
-		<name>orange1</name>
+		<name>orange</name>
 		<pose>Unspecified</pose>
 		<truncated>0</truncated>
 		<difficult>0</difficult>
