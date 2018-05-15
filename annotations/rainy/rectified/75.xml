@@ -1,7 +1,7 @@
 <annotation>
 	<folder>rectified</folder>
 	<filename>75.png</filename>
-	<path>/home/yumeng/project/cone-detection/annotations/rainy/rectified/75.png</path>
+	<path>/home/yumeng/project/cone-detection/annotations/rainy2/rectified/75.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -12,39 +12,27 @@
 	</size>
 	<segmented>0</segmented>
 	<object>
-		<name>yellow</name>
-		<pose>Unspecified</pose>
-		<truncated>0</truncated>
-		<difficult>0</difficult>
-		<bndbox>
-			<xmin>255</xmin>
-			<ymin>220</ymin>
-			<xmax>279</xmax>
-			<ymax>248</ymax>
-		</bndbox>
-	</object>
-	<object>
 		<name>blue</name>
 		<pose>Unspecified</pose>
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>334</xmin>
-			<ymin>241</ymin>
-			<xmax>360</xmax>
-			<ymax>275</ymax>
+			<xmin>255</xmin>
+			<ymin>251</ymin>
+			<xmax>274</xmax>
+			<ymax>279</ymax>
 		</bndbox>
 	</object>
 	<object>
-		<name>orange</name>
+		<name>yellow</name>
 		<pose>Unspecified</pose>
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>422</xmin>
-			<ymin>217</ymin>
-			<xmax>439</xmax>
-			<ymax>240</ymax>
+			<xmin>299</xmin>
+			<ymin>235</ymin>
+			<xmax>314</xmax>
+			<ymax>256</ymax>
 		</bndbox>
 	</object>
 	<object>
@@ -53,10 +41,22 @@
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>326</xmin>
-			<ymin>195</ymin>
-			<xmax>346</xmax>
-			<ymax>220</ymax>
+			<xmin>364</xmin>
+			<ymin>247</ymin>
+			<xmax>394</xmax>
+			<ymax>295</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>orange</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>400</xmin>
+			<ymin>244</ymin>
+			<xmax>418</xmax>
+			<ymax>268</ymax>
 		</bndbox>
 	</object>
 </annotation>

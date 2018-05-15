@@ -11,9 +11,9 @@ import glob
 import xml.etree.ElementTree as ET
 import pandas as pd
 
-patch_size = 45
+patch_size = 64
 resize_rate = 0.5
-radius = int((patch_size-1)/2)
+radius = 32
 
 # patch_size = 45
 # resize_rate = 1
@@ -59,13 +59,14 @@ def generate_data_xml(annotation_paths, data_path):
             img = imresize(img, 1.0*resize_rate)
             # img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-            mask_img = np.copy(img)
+            # mask_img = np.copy(img)
 
             # mask_img = np.random.random_integers(0, 255, img.shape).astype(np.uint8)
             # mask_img = np.zeros(img.shape).astype(np.uint8)
             row, col = img.shape[:2]
             mask = np.zeros(img.shape[:2]).astype(np.uint8)+100
             cones = []
+            img2 = np.copy(img)
 
             for member in root.findall('object'):
                 label = member[0].text
@@ -78,8 +79,9 @@ def generate_data_xml(annotation_paths, data_path):
 
                 max_length = max(abs(x2-x1), abs(y2-y1))*1.2
                 ratio = max_length/patch_size
+                
 
-                if ratio > 0.3:
+                if ratio > 0.2:
                     mask[max(0,y1-5):min(row,y2+5),max(0,x1-5):min(col,x2+5)] = 0
                     triangle = np.array([[x,y1+1],[x1+1,y2-1],[x2-1,y2-1]], np.int32)
                     triangle = triangle.reshape((-1,1,2))
@@ -95,6 +97,15 @@ def generate_data_xml(annotation_paths, data_path):
                         # triangle = np.array([[x,y1+1],[(x+x1)/2+1,y-1],[(x+x2)/2-1,y-1]], np.int32)
                         # triangle = triangle.reshape((-1,1,2))
                         # cv2.fillPoly(mask, [triangle], 255);
+
+                    if label == 'blue':
+                        cv2.fillPoly(img2, [triangle], 252);
+                    if label == 'yellow':
+                        cv2.fillPoly(img2, [triangle], 253);
+                    if label == 'orange' or label == 'orange1':
+                        cv2.fillPoly(img2, [triangle], 254);
+                    if label == 'orange2':
+                        cv2.circle(img2, (x, y), 5, 255, -1)
 
                     # x, y = random_shift(x, y, 3)
 
@@ -131,10 +142,10 @@ def generate_data_xml(annotation_paths, data_path):
 
             for x, y, label, ratio, triangle in cones:
                 patch_radius = int(radius * ratio)
-                cl = max(x-patch_radius*2,patch_radius)
-                cr = min(x+patch_radius*2,col-patch_radius)
-                rl = max(y-patch_radius*2,patch_radius)
-                rr = min(y+patch_radius*2,row-patch_radius)
+                cl = max(x-patch_radius*2,radius)
+                cr = min(x+patch_radius*2,col-radius)
+                rl = max(y-patch_radius*2,radius)
+                rr = min(y+patch_radius*2,row-radius)
                 mask_tmp = mask[rl:rr,cl:cr]
                 # mask2 = img[y-patch_radius*2:y+patch_radius*2,x-patch_radius*2:x+patch_radius*2]
                 # cv2.namedWindow('img', cv2.WINDOW_NORMAL)
@@ -143,10 +154,10 @@ def generate_data_xml(annotation_paths, data_path):
                 pickup_rate = np.sum(mask_tmp>100)/np.sum(mask_tmp==100)/5
                 for c in range(cl, cr):
                     for r in range(rl, rr):
-                        if random() < 0.1:
+                        if random() < 0.5:
                             flag = 0
                             if random() < 0.7:
-                                image = mask_img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
+                                image = img[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
                                 image = cv2.resize(image, (patch_size, patch_size))
                                 if mask[r,c] < 255:
                                     image = augmentation(image)
@@ -163,6 +174,16 @@ def generate_data_xml(annotation_paths, data_path):
                                 flag = 1
                                 if mask[r,c] == 252:
                                     path = join(path, '1')
+                                    print(ratio)
+                                    cv2.namedWindow('mask', cv2.WINDOW_NORMAL)
+                                    cv2.imshow('mask', mask_tmp)
+                                    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+                                    cv2.imshow('img', image)
+                                    image2 = img2[r-patch_radius:r+patch_radius+1, c-patch_radius:c+patch_radius+1]
+                                    image2 = cv2.resize(image, (patch_size, patch_size))
+                                    cv2.namedWindow('img2', cv2.WINDOW_NORMAL)
+                                    cv2.imshow('img2', image2)
+                                    cv2.waitKey(0)
                                 if mask[r,c] == 253:
                                     path = join(path, '2')
                                 if mask[r,c] == 254:

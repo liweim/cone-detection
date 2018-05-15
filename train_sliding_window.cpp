@@ -18,7 +18,7 @@
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 
-int patch_size = 45;
+int patch_size = 64;
 
 void convert_image(cv::Mat img,
                    int w,
@@ -161,14 +161,25 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   //    << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
   //    << fc(128, 5, true, backend_type) << softmax(5); 
 
-  nn << conv(45, 45, 3, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
-     // << dropout(22*22*16, 0.25)                                                   
-     << conv(22, 22, 4, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
-     // << dropout(8*8*32, 0.25)
-     << conv(10, 10, 4, 32, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
-     // << dropout(8*8*32, 0.25)                     
-     << fc(4 * 4 * 32, 128, true, backend_type) << leaky_relu()  
-     << fc(128, 5, true, backend_type) << softmax(5); 
+  // nn << conv(45, 45, 3, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+  //    << dropout(22*22*16, 0.25)                                                   
+  //    << conv(22, 22, 4, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+  //    << dropout(10*10*32, 0.25)
+  //    << conv(10, 10, 4, 32, 64, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+  //    << dropout(4*4*64, 0.25)                     
+  //    << fc(4 * 4 * 64, 128, true, backend_type) << leaky_relu()  
+  //    << fc(128, 5, true, backend_type) << softmax(5); 
+
+  nn << conv(64, 64, 4, 3, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     << dropout(31*31*16, 0.25)                                                   
+     << conv(31, 31, 3, 16, 16, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     << dropout(15*15*16, 0.25)
+     << conv(15, 15, 3, 16, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     << dropout(7*7*32, 0.25)
+     << conv(7, 7, 3, 32, 32, tiny_dnn::padding::valid, true, 2, 2, backend_type) << tanh() 
+     << dropout(3*3*32, 0.25)                     
+     << fc(3 * 3 * 32, 128, true, backend_type) << leaky_relu()  
+     << fc(128, 5, true, backend_type) << softmax(5);
 
    for (int i = 0; i < nn.depth(); i++) {
         std::cout << "#layer:" << i << "\n";
