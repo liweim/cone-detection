@@ -1,13 +1,13 @@
 #good:0, bad:1, good+bad:-1
-python3 cone_annotate_region.py --mode 1 --img_path annotations/snowy/rectified/12.png --result_path annotations/snowy/results/12.png --model_id background
+python3 cone_annotate_region.py --mode 1 --img_path data/snowy/rectified/12.png --result_path data/snowy/results/12.png --model_id background
 
 python3 annotation_triangle.py
 
-python3 cone_generate_data_xml.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_roi_big --efficient 0
+python3 cone_generate_data_xml.py --annotation_paths data/sunny/rectified data/skidpad1/rectified data/rainy/rectified data/rainy2/rectified --data_path tmp/all_roi_big --efficient 0
 
-python3 cone_generate_data_xml_roi_new.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/cloudy/rectified annotations/circle/rectified --data_path tmp/all_roi_big
+python3 cone_generate_data_xml_roi_new.py --annotation_paths data/sunny/rectified data/skidpad1/rectified data/rainy/rectified data/cloudy/rectified data/circle/rectified --data_path tmp/all_roi_big
 
-python3 cone_generate_data_xml_roi.py --annotation_paths annotations/sunny/rectified annotations/skidpad1/rectified annotations/rainy/rectified annotations/rainy2/rectified --data_path tmp/all_roi_big
+python3 cone_generate_data_xml_roi.py --annotation_paths data/sunny/rectified data/skidpad1/rectified data/rainy/rectified data/rainy2/rectified --data_path tmp/all_roi_big
 
 python3 cone_generate_data_txt.py --data_path data_center_resize
 
@@ -15,11 +15,11 @@ python3 train_efficient_sliding_window.py  --model_name efficient_sliding_window
 
 python3 train_segnet.py  --model_name segnet --data_path data_center
 
-python3 efficient_sliding_window.py --img_path annotations/skidpad1/1513418746.296055.png --model_path models/efficient_sliding_window --cone_distance 3 --threshold 0.9
+python3 efficient_sliding_window.py --img_path data/skidpad1/1513418746.296055.png --model_path models/efficient_sliding_window --cone_distance 3 --threshold 0.9
 
-python3 segnet.py --img_path annotations/skidpad1/1513418746.296055.png --model_path models/segnet --cone_distance 3 --threshold 0.9
+python3 segnet.py --img_path data/skidpad1/1513418746.296055.png --model_path models/segnet --cone_distance 3 --threshold 0.9
 
-python3 cone_detect_all.py --img_folder_path annotations/circle/rectified --model_path models/efficient_sliding_window --cone_distance 10 --threshold 0.9
+python3 cone_detect_all.py --img_folder_path data/circle/rectified --model_path models/efficient_sliding_window --cone_distance 10 --threshold 0.9
 
 
 
@@ -29,7 +29,7 @@ g++ train_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --
 
 g++ sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o sliding_window
 
-./sliding_window annotations/skidpad1/1513418735.872856.png
+./sliding_window data/skidpad1/1513418735.872856.png
 
 export OMP_NUM_THREADS=4
 g++ train_efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o train_efficient_sliding_window
@@ -42,13 +42,13 @@ g++ test_model.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cfl
 
 g++ efficient_sliding_window.cpp -I ../tiny-dnn/ -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o efficient_sliding_window
 
-./efficient_sliding_window models/all_efficient_rgb_best annotations/circle/images 0.9
+./efficient_sliding_window models/all_efficient_rgb_best data/circle/images 0.9
 
 g++ get_depth.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -o get_depth
 
 g++ mobilenet.cpp -std=c++14 -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o mobilenet
 
-./mobilenet ../annotations/circle/images 0.1
+./mobilenet ../data/circle/images 0.1
 
 g++ cnn_roi.cpp -std=c++14 -I ../tiny-dnn/ -lpthread `pkg-config --libs --cflags opencv` -lboost_system -lboost_filesystem -fopenmp -g -O2 -ltbb -o cnn_roi
 
