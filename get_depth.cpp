@@ -21,6 +21,9 @@
 using namespace cv;
 using namespace std;
 
+int WIDTH = 672;
+int HEIGHT = 376;
+
 void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   cv::Mat grayL, grayR, dispL, dispR;
 
@@ -28,7 +31,7 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   cv::cvtColor(imgR, grayR, 6);
 
   cv::Ptr<cv::StereoBM> sbmL = cv::StereoBM::create(); 
-  sbmL->setBlockSize(13);
+  sbmL->setBlockSize(21);
   sbmL->setNumDisparities(32);
   sbmL->compute(grayL, grayR, dispL);
 
@@ -37,17 +40,14 @@ void blockMatching(cv::Mat &disp, cv::Mat imgL, cv::Mat imgR){
   // sbmR->compute(grayR, grayL, dispR);
   // wls_filter->setLambda(8000);
   // wls_filter->setSigmaColor(0.8);
-  // wls_filter->filter(dispL, imgL, disp, dispR);
-  
-  disp = dispL/16;
-  // cv::normalize(dispL, disp, 0, 255, 32, CV_8U);
-  // disp /= 16;
+  // wls_filter->filter(dispL, imgL, dispL, dispR);
+  // disp = dispL/16;
 
   // cv::Mat disp8;
-  // cv::normalize(disp, disp8, 0, 255, 32, CV_8U);
-  // cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
-  // cv::imshow("disp", imgL+imgR);
-  // cv::waitKey(0);
+  cv::normalize(dispL, disp, 0, 255, 32, CV_8U);
+  cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
+  cv::imshow("disp", imgL+imgR);
+  cv::waitKey(10);
 }
 
 void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, cv::Mat &XYZ){
@@ -65,8 +65,8 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   //   0.9997, 0.0015, 0.0215,
   //   -0.0015, 1, -0.00008,
   //   -0.0215, 0.00004, 0.9997);
-  // cv::Mat T = (cv::Mat_<double>(3, 1) << -119.1807, 0.1532, 1.1225);
-  // cv::Size stdSize = cv::Size(640, 360);
+  // cv::Mat T = (cv::Mat_<double>(3, 1) << -0.1191807, 0.0001532, 0.0011225);
+  // cv::Size stdSize = cv::Size(WIDTH, HEIGHT);
 
   //official
   cv::Mat mtxLeft = (cv::Mat_<double>(3, 3) <<
@@ -83,15 +83,15 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   cv::Mat R;
   cv::Rodrigues(rodrigues, R);
   cv::Mat T = (cv::Mat_<double>(3, 1) << -0.12, 0, 0);
-  cv::Size stdSize = cv::Size(672, 376);
+  cv::Size stdSize = cv::Size(WIDTH, HEIGHT);
 
   int width = img.cols;
   int height = img.rows;
   cv::Mat imgL(img, cv::Rect(0, 0, width/2, height));
   cv::Mat imgR(img, cv::Rect(width/2, 0, width/2, height));
 
-  // cv::resize(imgL, imgL, stdSize);
-  // cv::resize(imgR, imgR, stdSize);
+  cv::resize(imgL, imgL, stdSize);
+  cv::resize(imgR, imgR, stdSize);
 
   //std::cout << imgR.size() <<std::endl;
 
@@ -122,6 +122,7 @@ void reconstruction(cv::Mat img, cv::Mat &Q, cv::Mat &disp, cv::Mat &rectified, 
   // cv::namedWindow("disp", cv::WINDOW_NORMAL);
   // cv::imshow("disp", imgL+imgR);
   // cv::waitKey(0);
+  // cv::waitKey(0);
 
   rectified = imgL;
 
@@ -135,22 +136,27 @@ void getDepth(const string &imgPath) {
   reconstruction(imgSource, Q, disp, rectified, XYZ);
 
   int index, index2;
-  string savePath;
+  std::string filename, savePath;
+  index = imgPath.find_last_of('/');
+  filename = imgPath.substr(index+1);
+  index2 = filename.find_last_of('.');
+  savePath = imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+".csv";
 
-  index = imgPath.find_last_of('.');
-  savePath = imgPath.substr(0,index)+".csv";
   ifstream csvPath(savePath);
   cout << savePath << endl;
 
   string line, x, y, label;
   ofstream savefile;
-  savefile.open(imgPath.substr(0,index)+"_3d.csv");
+  savefile.open(imgPath.substr(0,index-7)+"/results/"+filename.substr(0,index2)+"_3d.csv");
   while (getline(csvPath, line)) 
   {  
       stringstream liness(line);  
-      getline(liness, x, ' ');  
-      getline(liness, y, ' '); 
-      getline(liness, label);
+      // getline(liness, x, ' ');  
+      // getline(liness, y, ' '); 
+      // getline(liness, label);
+      getline(liness, x, ',');  
+      getline(liness, y, ','); 
+      getline(liness, label, ',');
       
       Point position(stoi(x), stoi(y));
       Point3f point3D = XYZ.at<Point3f>(position);
@@ -161,7 +167,7 @@ void getDepth(const string &imgPath) {
 }
 
 int main(int argc, char **argv) {
-  for(int i = 85; i <= 310; i++)
-    getDepth("annotations/circle/results_circle_perfect/"+to_string(i)+".png");
+  for(int i = 0; i <= 804; i++)
+    getDepth("data/hairpin/images/"+to_string(i)+".png");
   // getDepth("annotations/circle/results_circle_perfect/100.png");
 }

@@ -762,3 +762,35 @@ int main( int argc, char** argv )
   // cv::waitKey(0);
   // cv::waitKey(0);
 }
+
+// int main( int argc, char** argv )
+// {
+//   cv::VideoCapture cap(1); // open the default camera
+//   if(!cap.isOpened())  // check if we succeeded
+//       return -1;
+//   cap.set(cv::CAP_PROP_FRAME_WIDTH,1344);
+//   cap.set(cv::CAP_PROP_FRAME_HEIGHT,376);
+//   // cap.set(cv::CAP_PROP_POS_FRAMES,60);
+
+//   cv::Mat edges;
+//   cv::namedWindow("edges",1);
+//   for(;;)
+//   {
+//     cv::Mat frame;
+//     cap >> frame;
+//     cv::imshow("edges", frame);
+//     if(cv::waitKey(2) >= 0) 
+//       break;
+//   }
+
+//   // slidingWindow("models/all_roi_big");
+
+//   // for(int i = 0; i <= 804; i++){
+//   //   auto startTime = std::chrono::system_clock::now();
+//   //   forwardDetectionORB("data/hairpin/images/"+std::to_string(i)+".png");
+    
+//   //   auto endTime = std::chrono::system_clock::now();
+//   //   std::chrono::duration<double> diff = endTime-startTime;
+//   //   std::cout << "Time: " << diff.count() << " s\n";
+//   // }
+// }

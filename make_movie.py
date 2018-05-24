@@ -38,11 +38,11 @@ import cv2
 # 	writer.writeFrame(img[:,:,::-1])
 # writer.close()
 
-image_folder = 'tmp/sd_results/'
-writer = skvideo.io.FFmpegWriter("tmp/results/circle.mp4", 
-	inputdict={"-r": "8"}, 
+image_folder = 'data/hairpin/results/'
+writer = skvideo.io.FFmpegWriter("tmp/results/hairpin.mp4", 
+	inputdict={"-r": "15"}, 
 	outputdict={'-vcodec': 'libx264', '-b': '30000000'})
-for i in range(85,650):
+for i in range(0,805):
 	img = cv2.imread(image_folder+str(i)+'.png')
 	writer.writeFrame(img[:,:,::-1])
 writer.close()
